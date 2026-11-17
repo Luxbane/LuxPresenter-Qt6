@@ -377,7 +377,17 @@ void PresentationTab::markLive(int page)
 bool PresentationTab::removeDocument(const QString& docId)
 {
     const bool current = m_docs->currentIndex() >= 0 && m_docs->currentData().toString() == docId;
+    QString filePath;
+    for (const PresentationDocItem& d : m_data.presentationDocs()) {
+        if (d.id == docId) {
+            filePath = d.filePath;
+            break;
+        }
+    }
     const bool ok = m_data.deletePresentationDoc(docId);
+    if (!filePath.isEmpty()) {
+        PresentationService::clearCacheFor(filePath);
+    }
     if (current || m_selectedId == docId) {
         m_doc = PresentationService::Document();
         m_slides->clear();

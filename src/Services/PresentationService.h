@@ -31,6 +31,9 @@ public:
     static QString supportedFilter();                                 // file dialog filter
     static bool isLegacyPowerPoint(const QString& path);              // .ppt / .pps
     static QString cacheDirectoryFor(const QString& filePath);        // <PresentationCache>/<md5 of lower-case path>
+    static void pruneCache(const QList<QString>& activeSourceFilePaths);
+    static void clearCacheFor(const QString& filePath);
+    static void clearAllCache();
 
     void open(const QString& filePath);
     const Document* document(const QString& filePath) const;

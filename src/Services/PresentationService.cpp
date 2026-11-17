@@ -6,6 +6,7 @@
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFileInfo>
+#include <QSet>
 #include <QTimer>
 
 namespace Lux {
@@ -41,6 +42,57 @@ QString PresentationService::cacheDirectoryFor(const QString& filePath)
 {
     const QByteArray hash = QCryptographicHash::hash(QFileInfo(filePath).absoluteFilePath().toLower().toUtf8(), QCryptographicHash::Md5).toHex();
     return QDir(AppPaths::presentationCacheDirectory()).filePath(QString::fromLatin1(hash));
+}
+
+void PresentationService::clearCacheFor(const QString& filePath)
+{
+    if (filePath.trimmed().isEmpty())
+        return;
+    const QString dir = cacheDirectoryFor(filePath);
+    if (QDir(dir).exists())
+        QDir(dir).removeRecursively();
+}
+
+void PresentationService::clearAllCache()
+{
+    const QString cacheRoot = AppPaths::presentationCacheDirectory();
+    QDir rootDir(cacheRoot);
+    if (!rootDir.exists())
+        return;
+    const QFileInfoList entries = rootDir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot);
+    for (const QFileInfo& fi : entries) {
+        if (fi.isDir()) {
+            QDir(fi.absoluteFilePath()).removeRecursively();
+        } else {
+            QFile::remove(fi.absoluteFilePath());
+        }
+    }
+}
+
+void PresentationService::pruneCache(const QList<QString>& activeSourceFilePaths)
+{
+    const QString cacheRoot = AppPaths::presentationCacheDirectory();
+    QDir rootDir(cacheRoot);
+    if (!rootDir.exists())
+        return;
+
+    QSet<QString> activeHashes;
+    for (const QString& path : activeSourceFilePaths) {
+        if (!path.trimmed().isEmpty()) {
+            const QByteArray hash = QCryptographicHash::hash(QFileInfo(path).absoluteFilePath().toLower().toUtf8(), QCryptographicHash::Md5).toHex();
+            activeHashes.insert(QString::fromLatin1(hash).toLower());
+        }
+    }
+
+    const QFileInfoList subDirs = rootDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QFileInfo& dirInfo : subDirs) {
+        const QString name = dirInfo.fileName().toLower();
+        if (name == QStringLiteral("_user_profile"))
+            continue; // Keep LibreOffice installation profile
+        if (!activeHashes.contains(name)) {
+            QDir(dirInfo.absoluteFilePath()).removeRecursively();
+        }
+    }
 }
 
 const PresentationService::Document* PresentationService::document(const QString& filePath) const

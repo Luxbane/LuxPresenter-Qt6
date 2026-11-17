@@ -1057,6 +1057,10 @@ void MainWindow::closeEvent(QCloseEvent* e)
     }
     if (m_online && m_online->host())
         m_online->host()->cleanupBrowsingDataSync(2500);
+    QList<QString> activePaths;
+    for (const PresentationDocItem& p : m_data.presentationDocs())
+        activePaths.append(p.filePath);
+    PresentationService::pruneCache(activePaths);
     m_projection->hideWindow(); // the projector windows must not keep the application alive
     QMainWindow::closeEvent(e);
 }
@@ -1460,6 +1464,11 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* e)
 
 void MainWindow::setupPresentations()
 {
+    QList<QString> activePaths;
+    for (const PresentationDocItem& p : m_data.presentationDocs())
+        activePaths.append(p.filePath);
+    PresentationService::pruneCache(activePaths);
+
     PresentationTab* tab = m_library->presentationTab();
     connect(tab, &PresentationTab::slideStaged, this, [this](const PresentationService::Document& d, int page) {
         showDocumentInPreview(d, page);
