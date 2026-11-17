@@ -340,9 +340,10 @@ void DataService::loadPresentationDocs()
         return;
     }
     m_presentationDocs.clear();
-    for (const PresentationDocItem& p : std::as_const(loaded))
-        if (!p.filePath.trimmed().isEmpty() && QFile::exists(p.filePath))
+    for (const PresentationDocItem& p : std::as_const(loaded)) {
+        if (!p.filePath.trimmed().isEmpty() && (QFile::exists(p.filePath) || QDir(AppPaths::presentationCacheDirectoryFor(p.filePath)).exists()))
             m_presentationDocs.append(p);
+    }
     if (m_presentationDocs.size() != loaded.size())
         savePresentationDocsFile();
 }

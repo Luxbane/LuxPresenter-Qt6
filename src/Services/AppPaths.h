@@ -29,6 +29,7 @@ public:
     static QString dataDirectory();            // settings.json, media.json, bibles.json, ...
     static QString thumbnailCacheDirectory();  // <Data>/Thumbnails
     static QString presentationCacheDirectory(); // <Data>/PresentationCache (created on demand)
+    static QString presentationCacheDirectoryFor(const QString& filePath);
     static QString mediaDirectory();           // <Data>/Media
     static QString songsDirectory();           // folder holding songs.json
     static void setSongsDirectory(const QString& path); // empty = re-resolve default

@@ -1,6 +1,7 @@
 #include "Services/AppPaths.h"
 
 #include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -129,6 +130,12 @@ QString AppPaths::presentationCacheDirectory()
     const QString dir = clean(QDir(dataDirectory()).filePath(QStringLiteral("PresentationCache")));
     QDir().mkpath(dir);
     return dir;
+}
+
+QString AppPaths::presentationCacheDirectoryFor(const QString& filePath)
+{
+    const QByteArray hash = QCryptographicHash::hash(QFileInfo(filePath).absoluteFilePath().toLower().toUtf8(), QCryptographicHash::Md5).toHex();
+    return QDir(presentationCacheDirectory()).filePath(QString::fromLatin1(hash));
 }
 
 QString AppPaths::mediaDirectory()

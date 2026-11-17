@@ -40,8 +40,7 @@ QString PresentationService::supportedFilter()
 
 QString PresentationService::cacheDirectoryFor(const QString& filePath)
 {
-    const QByteArray hash = QCryptographicHash::hash(QFileInfo(filePath).absoluteFilePath().toLower().toUtf8(), QCryptographicHash::Md5).toHex();
-    return QDir(AppPaths::presentationCacheDirectory()).filePath(QString::fromLatin1(hash));
+    return AppPaths::presentationCacheDirectoryFor(filePath);
 }
 
 void PresentationService::clearCacheFor(const QString& filePath)
