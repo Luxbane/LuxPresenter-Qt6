@@ -1,12 +1,26 @@
-# Build outputs
+# Build outputs & packaging
 /build/
 /build-*/
+/cmake-build-*/
+/out/
 /Portable/
 /Release/
-/out/
 CMakeUserPresets.json
 
-# C++ Object, binary, and linker artifacts
+# Heavy binaries, executables, dynamic libraries, and archives
+*.exe
+*.dll
+*.so
+*.dylib
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+*.msi
+*.iso
+
+# C++ Object, binary, debug, and linker artifacts
 *.obj
 *.ilk
 *.pdb
@@ -18,6 +32,9 @@ CMakeUserPresets.json
 *.dmp
 *.bak
 *.orig
+*.VC.db
+*.opendb
+.cache/
 test_out.txt
 display_log.txt
 
@@ -27,13 +44,33 @@ display_log.txt
 !resources/**
 !tests/fixtures/**
 
+# Third-party dependencies & downloads
+/third_party/
+
+# Raw third-party license text files (consolidated into THIRD_PARTY_LICENSES.md)
+/licenses/
+
+# Runtime caches and local user databases
+**/PresentationCache/
+**/WebView2Data/
+**/Thumbnails/
+**/Database/
+**/AppData/
+
+# Legacy adblock text snapshots (uBlock Origin extension is used instead)
+/data/adblock/
+
 # Internal project & AI guidelines
 Rules.md
 
-# Windows system files
+# Windows & OS system files
 desktop.ini
 Thumbs.db
 $RECYCLE.BIN/
+.DS_Store
+.directory
+*~
+*.lnk
 
 # Visual Studio & IDE configuration
 .vs/
@@ -41,23 +78,3 @@ $RECYCLE.BIN/
 .idea/
 *.user
 *.suo
-
-# Third-party heavy binaries & downloads
-/third_party/downloads/
-/third_party/mpv-lgpl/
-/third_party/pdfium/
-/third_party/webview2/
-/third_party/libreoffice/
-/third_party/webview2-runtime/
-
-# Runtime caches and local user databases
-PresentationCache/
-WebView2Data/
-Thumbnails/
-Database/
-
-# Raw third-party license text files (consolidated into THIRD_PARTY_LICENSES.md)
-/licenses/
-
-# Legacy adblock text snapshots (uBlock Origin extension is used instead)
-/data/adblock/

@@ -4,14 +4,13 @@
 [![Qt 6.12](https://img.shields.io/badge/Qt-6.12-green.svg)](https://www.qt.io/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D6.svg)](https://www.microsoft.com/windows)
 [![itch.io](https://img.shields.io/badge/itch.io-LuxPresenter-FA5C5C.svg)](https://luxbane.itch.io/luxpresenter)
-[![GitHub](https://img.shields.io/badge/GitHub-Luxbane%2FLuxPresenter-181717.svg)](https://github.com/Luxbane/LuxPresenter)
+[![GitHub](https://img.shields.io/badge/GitHub-Luxbane%2FLuxPresenter--Qt6-181717.svg)](https://github.com/Luxbane/LuxPresenter-Qt6)
 
-> *"We really got a free, high-performance church presenter app before GTA 6."* 🎮🕊️  
-> *(Dropping right before November 19!)*
+> *"We really got a free, high-performance church presenter app one day after GTA 6."* 🎮🕊️
 
 **LuxPresenter** is a high-performance, modern church presentation and worship projection software engineered in **C++20** and **Qt 6**, built and pair-programmed with **Claude Sonnet 5.5** and **Gemini 3.8 Flash**. Designed for churches, ministries, conferences, and live events, LuxPresenter delivers rock-solid stability, zero-latency switching, and hardware-accelerated dual-display output.
 
-* **GitHub Repository:** [https://github.com/Luxbane/LuxPresenter](https://github.com/Luxbane/LuxPresenter)
+* **GitHub Repository:** [https://github.com/Luxbane/LuxPresenter-Qt6](https://github.com/Luxbane/LuxPresenter-Qt6)
 * **itch.io Page:** [https://luxbane.itch.io/luxpresenter](https://luxbane.itch.io/luxpresenter)
 
 ---
@@ -55,7 +54,7 @@
 
 ## Download & Installation
 
-Visit the [Releases](https://github.com/Luxbane/LuxPresenter/releases) page or our [itch.io](https://luxbane.itch.io/luxpresenter) page to download:
+Visit the [Releases](https://github.com/Luxbane/LuxPresenter-Qt6/releases) page or our [itch.io](https://luxbane.itch.io/luxpresenter) page to download:
 
 1. **LuxPresenter Setup (`LuxPresenter_Setup.exe`)**
    * Standard Windows installer.
@@ -91,7 +90,7 @@ Visit the [Releases](https://github.com/Luxbane/LuxPresenter/releases) page or o
 
 ### Quick Build
 ```cmd
-git clone https://github.com/Luxbane/LuxPresenter.git
+git clone https://github.com/Luxbane/LuxPresenter-Qt6.git
 cd LuxPresenter
 build.bat Release
 ```
@@ -133,5 +132,5 @@ LuxPresenter is created and maintained by **Luxbane**, co-developed with **Claud
 
 * **License:** Licensed under the [GNU General Public License v3.0](LICENSE) (GPL-3.0). Free and open-source forever.
 * **GitHub:** [@Luxbane](https://github.com/Luxbane)
-* **Repository:** [https://github.com/Luxbane/LuxPresenter](https://github.com/Luxbane/LuxPresenter)
+* **Repository:** [https://github.com/Luxbane/LuxPresenter-Qt6](https://github.com/Luxbane/LuxPresenter-Qt6)
 * **itch.io:** [https://luxbane.itch.io/luxpresenter](https://luxbane.itch.io/luxpresenter)
