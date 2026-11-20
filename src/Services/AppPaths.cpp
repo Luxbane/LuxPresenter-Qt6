@@ -125,6 +125,15 @@ QString AppPaths::thumbnailCacheDirectory()
     return clean(QDir(dataDirectory()).filePath(QStringLiteral("Thumbnails")));
 }
 
+QString AppPaths::thumbnailPathFor(const QString& filePath)
+{
+    const QFileInfo fi(filePath);
+    const QByteArray id = QCryptographicHash::hash(
+        QStringLiteral("%1|%2|%3").arg(fi.absoluteFilePath().toLower()).arg(fi.lastModified().toMSecsSinceEpoch()).arg(fi.size()).toUtf8(),
+        QCryptographicHash::Sha1).toHex();
+    return QDir(thumbnailCacheDirectory()).filePath(QStringLiteral("video_") + QString::fromLatin1(id) + QStringLiteral(".png"));
+}
+
 QString AppPaths::presentationCacheDirectory()
 {
     const QString dir = clean(QDir(dataDirectory()).filePath(QStringLiteral("PresentationCache")));

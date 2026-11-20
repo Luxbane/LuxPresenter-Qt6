@@ -489,6 +489,103 @@ private slots:
         QVERIFY(!svc.isAlertVisible());
         QCOMPARE(svc.runningMessages().size(), 0);
     }
+
+    void dataServiceCleanupOrphanedData()
+    {
+        Sandbox sb;
+        DataService ds;
+
+        // 1. Create a real media file and an orphan media item
+        const QString validMediaPath = sb.path(QStringLiteral("video1.mp4"));
+        {
+            QFile vf(validMediaPath);
+            QVERIFY(vf.open(QIODevice::WriteOnly));
+            vf.write("dummy video data");
+            vf.close();
+        }
+        MediaItem validMedia;
+        validMedia.name = QStringLiteral("Valid Video");
+        validMedia.filePath = validMediaPath;
+        QVERIFY(ds.addMediaItem(validMedia));
+
+        MediaItem missingMedia;
+        missingMedia.name = QStringLiteral("Missing Video");
+        missingMedia.filePath = sb.path(QStringLiteral("does_not_exist.mp4"));
+        QVERIFY(ds.addMediaItem(missingMedia));
+
+        // 2. Create valid thumbnail and orphan thumbnail in Data/Thumbnails
+        const QString validThumb = AppPaths::thumbnailPathFor(validMediaPath);
+        {
+            QDir().mkpath(QFileInfo(validThumb).absolutePath());
+            QFile tf(validThumb);
+            QVERIFY(tf.open(QIODevice::WriteOnly));
+            tf.write("png data");
+            tf.close();
+        }
+        const QString orphanThumb = QDir(AppPaths::thumbnailCacheDirectory()).filePath(QStringLiteral("video_orphan_12345.png"));
+        {
+            QFile tf(orphanThumb);
+            QVERIFY(tf.open(QIODevice::WriteOnly));
+            tf.write("orphan data");
+            tf.close();
+        }
+
+        // 3. Create valid presentation and orphan presentation
+        const QString validPresPath = sb.path(QStringLiteral("pres1.pdf"));
+        {
+            QFile pf(validPresPath);
+            QVERIFY(pf.open(QIODevice::WriteOnly));
+            pf.write("%PDF-1.4 dummy");
+            pf.close();
+        }
+        PresentationDocItem validPres;
+        validPres.name = QStringLiteral("Valid Pres");
+        validPres.filePath = validPresPath;
+        QVERIFY(ds.addPresentationDoc(validPres));
+
+        PresentationDocItem missingPres;
+        missingPres.name = QStringLiteral("Missing Pres");
+        missingPres.filePath = sb.path(QStringLiteral("missing.pdf"));
+        QVERIFY(ds.addPresentationDoc(missingPres));
+
+        const QString validPresCache = AppPaths::presentationCacheDirectoryFor(validPresPath);
+        QDir().mkpath(validPresCache);
+        {
+            QFile cf(QDir(validPresCache).filePath(QStringLiteral("slide_1.png")));
+            cf.open(QIODevice::WriteOnly);
+            cf.write("slide");
+            cf.close();
+        }
+
+        const QString orphanPresCache = QDir(AppPaths::presentationCacheDirectory()).filePath(QStringLiteral("orphan_cache_hash_9999"));
+        QDir().mkpath(orphanPresCache);
+        {
+            QFile cf(QDir(orphanPresCache).filePath(QStringLiteral("slide_1.png")));
+            cf.open(QIODevice::WriteOnly);
+            cf.write("orphan slide");
+            cf.close();
+        }
+
+        // 4. Run cleanup
+        ds.cleanupOrphanedData();
+
+        // 5. Verify results:
+        // Missing media pruned, valid media kept
+        QCOMPARE(ds.mediaItems().size(), 1);
+        QCOMPARE(ds.mediaItems().first().name, QStringLiteral("Valid Video"));
+
+        // Missing presentation pruned, valid presentation kept
+        QCOMPARE(ds.presentationDocs().size(), 1);
+        QCOMPARE(ds.presentationDocs().first().name, QStringLiteral("Valid Pres"));
+
+        // Valid thumbnail preserved, orphan thumbnail removed
+        QVERIFY(QFile::exists(validThumb));
+        QVERIFY(!QFile::exists(orphanThumb));
+
+        // Valid presentation cache preserved, orphan presentation cache directory removed
+        QVERIFY(QDir(validPresCache).exists());
+        QVERIFY(!QDir(orphanPresCache).exists());
+    }
 };
 
 QTEST_GUILESS_MAIN(CoreTests)

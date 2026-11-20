@@ -21,11 +21,7 @@ QString BackgroundThumbnails::key(const QString& path, int w) const
 }
 QString BackgroundThumbnails::posterFileFor(const QString& videoPath) const
 {
-    const QFileInfo fi(videoPath);
-    const QByteArray id = QCryptographicHash::hash(
-        QStringLiteral("%1|%2|%3").arg(fi.absoluteFilePath().toLower()).arg(fi.lastModified().toMSecsSinceEpoch()).arg(fi.size()).toUtf8(),
-        QCryptographicHash::Sha1).toHex();
-    return AppPaths::thumbnailCacheDirectory() + QStringLiteral("/video_") + QString::fromLatin1(id) + QStringLiteral(".png");
+    return AppPaths::thumbnailPathFor(videoPath);
 }
 void BackgroundThumbnails::clearMemoryCache()
 {

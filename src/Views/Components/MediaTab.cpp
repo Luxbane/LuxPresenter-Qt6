@@ -1,5 +1,6 @@
 #include "Views/Components/MediaTab.h"
 
+#include "Services/AppPaths.h"
 #include "Services/DataService.h"
 #include "Services/ThemeService.h"
 #include "Views/Components/TabStrip.h"
@@ -431,7 +432,11 @@ void MediaTab::onDeleteClicked()
         return;
     for (auto* it : items) {
         const QString id = it->data(Qt::UserRole + 2).toString();
+        const QString path = it->data(Qt::UserRole).toString();
         m_data.deleteMediaItem(id);
+        if (!path.isEmpty()) {
+            QFile::remove(AppPaths::thumbnailPathFor(path));
+        }
     }
     refresh();
 }

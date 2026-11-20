@@ -9,6 +9,7 @@
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QSet>
 
 #include <algorithm>
 
@@ -81,6 +82,7 @@ DataService::DataService()
     loadPresentationDocs();
     loadBackgrounds();
     loadBibles();
+    cleanupOrphanedData();
 }
 
 bool DataService::fail(const QString& error)
@@ -341,7 +343,7 @@ void DataService::loadPresentationDocs()
     }
     m_presentationDocs.clear();
     for (const PresentationDocItem& p : std::as_const(loaded)) {
-        if (!p.filePath.trimmed().isEmpty() && (QFile::exists(p.filePath) || QDir(AppPaths::presentationCacheDirectoryFor(p.filePath)).exists()))
+        if (!p.filePath.trimmed().isEmpty() && QFile::exists(p.filePath))
             m_presentationDocs.append(p);
     }
     if (m_presentationDocs.size() != loaded.size())
@@ -479,6 +481,97 @@ int DataService::verseCount(const QString& version) const
     return static_cast<int>(std::count_if(m_verses.cbegin(), m_verses.cend(), [&](const BibleVerse& v) {
         return v.version.compare(version, Qt::CaseInsensitive) == 0;
     }));
+}
+
+void DataService::cleanupOrphanedData()
+{
+    // 1. Clean media.json: prune items whose source files no longer exist on disk
+    const int oldMediaCount = m_media.size();
+    m_media.removeIf([](const MediaItem& m) {
+        return m.filePath.trimmed().isEmpty() || !QFile::exists(m.filePath);
+    });
+    if (m_media.size() != oldMediaCount) {
+        saveMediaFile();
+    }
+
+    // 2. Clean backgrounds.json: prune file-based backgrounds whose source files no longer exist
+    // (Solid colors starting with '#' or empty are preserved)
+    const int oldBgCount = m_backgrounds.size();
+    m_backgrounds.removeIf([](const BackgroundItem& b) {
+        const QString p = b.filePath.trimmed();
+        if (p.isEmpty() || p.startsWith(QLatin1Char('#')))
+            return false;
+        return !QFile::exists(p);
+    });
+    if (m_backgrounds.size() != oldBgCount) {
+        saveBackgroundsFile();
+    }
+
+    // 3. Clean presentations.json: prune presentations whose source files no longer exist
+    const int oldPresCount = m_presentationDocs.size();
+    m_presentationDocs.removeIf([](const PresentationDocItem& p) {
+        return p.filePath.trimmed().isEmpty() || !QFile::exists(p.filePath);
+    });
+    if (m_presentationDocs.size() != oldPresCount) {
+        savePresentationDocsFile();
+    }
+
+    // 4. Clean orphaned thumbnails in Data/Thumbnails (and Data/Thumbnail if it exists)
+    QSet<QString> activeThumbnails;
+    for (const MediaItem& m : m_media) {
+        if (!m.filePath.trimmed().isEmpty() && QFile::exists(m.filePath)) {
+            activeThumbnails.insert(QFileInfo(AppPaths::thumbnailPathFor(m.filePath)).fileName().toLower());
+        }
+    }
+    for (const BackgroundItem& b : m_backgrounds) {
+        if (!b.filePath.trimmed().isEmpty() && !b.filePath.startsWith(QLatin1Char('#')) && QFile::exists(b.filePath)) {
+            activeThumbnails.insert(QFileInfo(AppPaths::thumbnailPathFor(b.filePath)).fileName().toLower());
+        }
+    }
+
+    auto cleanThumbDir = [&](const QString& dirPath) {
+        QDir dir(dirPath);
+        if (!dir.exists())
+            return;
+        const QFileInfoList entries = dir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot);
+        for (const QFileInfo& fi : entries) {
+            if (fi.fileName().compare(QStringLiteral(".gitkeep"), Qt::CaseInsensitive) == 0)
+                continue;
+            if (!activeThumbnails.contains(fi.fileName().toLower())) {
+                QFile::remove(fi.absoluteFilePath());
+            }
+        }
+    };
+
+    cleanThumbDir(AppPaths::thumbnailCacheDirectory());
+    const QString singularThumbDir = QDir(m_dataDir).filePath(QStringLiteral("Thumbnail"));
+    if (QDir(singularThumbDir).exists() && QFileInfo(singularThumbDir).absoluteFilePath() != QFileInfo(AppPaths::thumbnailCacheDirectory()).absoluteFilePath()) {
+        cleanThumbDir(singularThumbDir);
+    }
+
+    // 5. Clean orphaned presentation cache directories in Data/PresentationCache
+    QSet<QString> activePresCaches;
+    for (const PresentationDocItem& p : m_presentationDocs) {
+        if (!p.filePath.trimmed().isEmpty() && QFile::exists(p.filePath)) {
+            activePresCaches.insert(QFileInfo(AppPaths::presentationCacheDirectoryFor(p.filePath)).fileName().toLower());
+        }
+    }
+
+    QDir presDir(AppPaths::presentationCacheDirectory());
+    if (presDir.exists()) {
+        const QFileInfoList dirEntries = presDir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot);
+        for (const QFileInfo& fi : dirEntries) {
+            if (fi.fileName().compare(QStringLiteral(".gitkeep"), Qt::CaseInsensitive) == 0)
+                continue;
+            if (!activePresCaches.contains(fi.fileName().toLower())) {
+                if (fi.isDir()) {
+                    QDir(fi.absoluteFilePath()).removeRecursively();
+                } else {
+                    QFile::remove(fi.absoluteFilePath());
+                }
+            }
+        }
+    }
 }
 
 } // namespace Lux

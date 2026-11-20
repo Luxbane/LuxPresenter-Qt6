@@ -28,6 +28,7 @@ public:
     static QString baseDirectory();
     static QString dataDirectory();            // settings.json, media.json, bibles.json, ...
     static QString thumbnailCacheDirectory();  // <Data>/Thumbnails
+    static QString thumbnailPathFor(const QString& filePath);
     static QString presentationCacheDirectory(); // <Data>/PresentationCache (created on demand)
     static QString presentationCacheDirectoryFor(const QString& filePath);
     static QString mediaDirectory();           // <Data>/Media

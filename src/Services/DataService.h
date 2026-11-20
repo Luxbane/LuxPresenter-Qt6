@@ -76,6 +76,10 @@ public:
     QString songsFilePath() const { return m_songsFile; }
     QString lastError() const { return m_lastError; }
 
+    // Prunes missing items from media.json, backgrounds.json, and presentations.json,
+    // and deletes orphaned thumbnails and presentation cache directories on disk.
+    void cleanupOrphanedData();
+
 private:
     void loadSettings();
     void loadSongs();

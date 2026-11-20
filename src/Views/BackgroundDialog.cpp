@@ -1,5 +1,6 @@
 #include "Views/BackgroundDialog.h"
 #include "Models/Slide.h"
+#include "Services/AppPaths.h"
 #include "Services/BackgroundThumbnails.h"
 #include "Services/BackgroundUtil.h"
 #include "Services/DataService.h"
@@ -442,6 +443,7 @@ bool BackgroundDialog::removeSelected()
     if (!it)
         return false;
     const QString id = it->data(kIdRole).toString();
+    const QString filePath = it->data(kValueRole).toString();
     const bool isBuiltin = it->data(kBuiltinRole).toBool();
     bool ok = false;
     if (isBuiltin) {
@@ -453,6 +455,9 @@ bool BackgroundDialog::removeSelected()
         ok = true;
     } else {
         ok = m_data.deleteBackground(id);
+        if (!filePath.isEmpty() && !filePath.startsWith(QLatin1Char('#'))) {
+            QFile::remove(AppPaths::thumbnailPathFor(filePath));
+        }
     }
     reload();
     return ok;
