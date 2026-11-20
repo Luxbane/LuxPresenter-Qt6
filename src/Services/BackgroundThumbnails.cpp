@@ -81,6 +81,15 @@ QImage BackgroundThumbnails::image(const QString& path, int maxWidth)
     QPointer<BackgroundThumbnails> self(this);
     QThreadPool::globalInstance()->start([self, path, poster, k, scaled] {
         const bool ok = VideoPoster::generate(path, poster);
+        if (ok) {
+            // Downscale the extracted frame on disk to lightweight thumbnail dimensions
+            // (e.g. 128x72 for 16:9, ~3KB) so it saves disk space and runs fast on low-end hardware.
+            QImage raw(poster);
+            if (!raw.isNull() && (raw.width() > 128 || raw.height() > 128)) {
+                const QImage thumb = raw.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                thumb.save(poster, "PNG");
+            }
+        }
         const QImage img = ok ? scaled(poster) : QImage();
         if (!self)
             return;
