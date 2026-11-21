@@ -7,6 +7,7 @@
 #include "Services/SongSearch.h"
 #include "Services/TextRepair.h"
 #include "Services/ThemeService.h"
+#include "Services/UpdateService.h"
 #include "Views/AboutWindow.h"
 #include "Views/Components/ClassicButton.h"
 #include "Views/Components/LibraryView.h"
@@ -250,13 +251,22 @@ void MainWindow::buildMenus()
             &MainWindow::importSongsBackup);
 
     QMenu* help = bar->addMenu(QStringLiteral("&Help"));
-    plannedAction(help, QStringLiteral("Check for Updates..."), 8);
+    QAction* updateAct = help->addAction(QStringLiteral("Check for Updates..."));
+    connect(updateAct, &QAction::triggered, this, &MainWindow::checkForUpdates);
     help->addSeparator();
     QAction* donate = help->addAction(QStringLiteral("\u2615 Support && Donate (Ko-fi)..."));
     connect(donate, &QAction::triggered, this, &MainWindow::openKofi);
     help->addSeparator();
     QAction* about = help->addAction(QStringLiteral("About LuxPresenter"));
     connect(about, &QAction::triggered, this, &MainWindow::showAbout);
+
+    // Hidden debug shortcut (Ctrl+Shift+U) to preview the Software Update dialog
+    auto* previewUpdateAct = new QAction(this);
+    previewUpdateAct->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_U));
+    connect(previewUpdateAct, &QAction::triggered, this, [this] {
+        UpdateService::showPreviewDialog(this);
+    });
+    addAction(previewUpdateAct);
 }
 
 void MainWindow::buildToolbar()
@@ -1105,6 +1115,19 @@ void MainWindow::showAbout()
 {
     AboutWindow dlg(this);
     dlg.exec();
+}
+
+void MainWindow::checkForUpdates()
+{
+    if (m_suppressDialogs) {
+        setStatusText(QStringLiteral("Checking for updates..."));
+        return;
+    }
+    if (!m_updateService)
+        m_updateService = new UpdateService(this);
+
+    setStatusText(QStringLiteral("Checking for updates..."));
+    m_updateService->checkForUpdates(this, /*interactive=*/true);
 }
 
 void MainWindow::openSongsFolder()

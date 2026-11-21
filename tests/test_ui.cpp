@@ -23,6 +23,8 @@
 #include "Views/IconFactory.h"
 #include "Views/MainWindow.h"
 #include "Views/SongEditorWindow.h"
+#include "Services/UpdateService.h"
+#include "Views/UpdateDialog.h"
 
 #include <QAction>
 #include <QComboBox>
@@ -180,7 +182,7 @@ private slots:
         QCOMPARE(actionTexts(menus[6]).first(), QStringLiteral("Default Profile"));
         QVERIFY(findAction(menus[6], QStringLiteral("Default Profile"))->isChecked());
         QVERIFY(findAction(menus[7], QStringLiteral("About LuxPresenter"))->isEnabled());
-        QVERIFY(!findAction(menus[7], QStringLiteral("Check for Updates..."))->isEnabled());
+        QVERIFY(findAction(menus[7], QStringLiteral("Check for Updates..."))->isEnabled());
         QCOMPARE(w.themeAction()->shortcut(), QKeySequence(Qt::CTRL | Qt::Key_T));
     }
 
@@ -1714,6 +1716,34 @@ private slots:
         QTest::qWait(80);
         QVERIFY(w.grab().save(out + QStringLiteral("/ui_dark.png")));
         w.themeAction()->trigger();
+    }
+
+    void softwareUpdateSemVer()
+    {
+        // Tests semantic version comparison rules
+        QVERIFY(UpdateService::isVersionNewer(QStringLiteral("v1.1.2"), QStringLiteral("1.0.0")));
+        QVERIFY(UpdateService::isVersionNewer(QStringLiteral("v1.0.1"), QStringLiteral("1.0.0")));
+        QVERIFY(UpdateService::isVersionNewer(QStringLiteral("2.0.0"), QStringLiteral("1.9.9")));
+        QVERIFY(!UpdateService::isVersionNewer(QStringLiteral("v1.0.0"), QStringLiteral("1.0.0")));
+        QVERIFY(!UpdateService::isVersionNewer(QStringLiteral("v0.9.9"), QStringLiteral("1.0.0")));
+        QVERIFY(!UpdateService::isVersionNewer(QStringLiteral("1.0.0-beta"), QStringLiteral("1.0.0")));
+    }
+
+    void softwareUpdateDialog()
+    {
+        UpdateInfo info;
+        info.currentVersion = QStringLiteral("1.0.0");
+        info.newVersion = QStringLiteral("v1.1.2");
+        info.releaseTitle = QStringLiteral("LuxPresenter v1.1.2");
+        info.releaseNotes = QStringLiteral("### LuxPresenter v1.1.2\n- Bug fixes and improvements");
+        info.releaseUrl = QStringLiteral("https://github.com/Luxbane/LuxPresenter-Qt6/releases/tag/v1.1.2");
+        info.patchDownloadUrl = QStringLiteral("https://github.com/Luxbane/LuxPresenter-Qt6/releases/download/v1.1.2/LuxPresenter-Patch.zip");
+        info.isUpdateAvailable = true;
+
+        UpdateDialog dlg(info);
+        QCOMPARE(dlg.windowTitle(), QStringLiteral("Software Update"));
+        QCOMPARE(dlg.releaseUrl(), info.releaseUrl);
+        QVERIFY(!dlg.windowIcon().isNull());
     }
 };
 

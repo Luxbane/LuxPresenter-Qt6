@@ -31,6 +31,7 @@ class SlidePaneView;
 class SongsTab;
 class ScripturesTab;
 class MessageAlertWindow;
+class UpdateService;
 
 // Main application window (MainWindow.xaml + the Songs/Schedule parts of MainViewModel):
 // menu bar, upper toolbar, work area (left: Schedule + Library, centre: Preview, right: Live;
@@ -139,6 +140,7 @@ public slots:
     void toggleThemeMode();
     void toggleOnline();
     void showAbout();
+    void checkForUpdates();
     void openSongsFolder();
     void openKofi();
 
@@ -219,6 +221,7 @@ private:
     QAction* m_deleteSelectedAction = nullptr;
     ProjectionService* m_projection = nullptr;
     PresentationService* m_presentations = nullptr;
+    UpdateService* m_updateService = nullptr;
     struct PendingDoc { QString path; int page = 0; bool goLive = false; bool active = false; } m_pendingDoc;
     ClassicButton *m_goLiveButton = nullptr, *m_logoButton = nullptr, *m_blackButton = nullptr,
                   *m_clearButton = nullptr, *m_liveButton = nullptr, *m_alertButton = nullptr;
