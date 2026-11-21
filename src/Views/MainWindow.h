@@ -32,6 +32,8 @@ class SongsTab;
 class ScripturesTab;
 class MessageAlertWindow;
 class UpdateService;
+class StageServer;
+class StageWindow;
 
 // Main application window (MainWindow.xaml + the Songs/Schedule parts of MainViewModel):
 // menu bar, upper toolbar, work area (left: Schedule + Library, centre: Preview, right: Live;
@@ -62,6 +64,8 @@ public:
     ScheduleService& scheduleService() { return *m_scheduleService; }
     SlidePaneView* previewPane() const { return m_preview; }
     SlidePaneView* livePane() const { return m_live; }
+    StageServer* stageServer() const { return m_stageServer; }
+    StageWindow* stageWindow() const { return m_stageWindow; }
     OnlineBrowserView* online() const { return m_online; }
     AdBlockService* adBlock() const { return m_adBlock; }
     QStackedWidget* workStack() const { return m_workStack; }
@@ -139,6 +143,8 @@ public slots:
 
     void toggleThemeMode();
     void toggleOnline();
+    void toggleStageWindow();
+    void updateStageDisplay();
     void showAbout();
     void checkForUpdates();
     void openSongsFolder();
@@ -222,6 +228,9 @@ private:
     ProjectionService* m_projection = nullptr;
     PresentationService* m_presentations = nullptr;
     UpdateService* m_updateService = nullptr;
+    StageServer* m_stageServer = nullptr;
+    StageWindow* m_stageWindow = nullptr;
+    QTimer m_stageTimer;
     struct PendingDoc { QString path; int page = 0; bool goLive = false; bool active = false; } m_pendingDoc;
     ClassicButton *m_goLiveButton = nullptr, *m_logoButton = nullptr, *m_blackButton = nullptr,
                   *m_clearButton = nullptr, *m_liveButton = nullptr, *m_alertButton = nullptr;

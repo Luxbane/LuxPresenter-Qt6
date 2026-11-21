@@ -23,7 +23,9 @@
 #include "Views/IconFactory.h"
 #include "Views/MainWindow.h"
 #include "Views/SongEditorWindow.h"
+#include "Services/StageServer.h"
 #include "Services/UpdateService.h"
+#include "Views/StageWindow.h"
 #include "Views/UpdateDialog.h"
 
 #include <QAction>
@@ -176,9 +178,10 @@ private slots:
         QCOMPARE(findAction(file, QStringLiteral("New Schedule"))->shortcut(), QKeySequence(QKeySequence::New));
         QCOMPARE(actionTexts(menus[3]), (QStringList{"Import Bible Translation (.json)..."}));
         QCOMPARE(actionTexts(menus[4]),
-                 (QStringList{"Go Live\tF5", "Black\tCtrl+B", "Clear\tCtrl+C", "Logo\tF8", "Live Output", "---", "Output Display"}));
+                 (QStringList{"Go Live\tF5", "Black\tCtrl+B", "Clear\tCtrl+C", "Logo\tF8", "Live Output", "---", "Output Display", "---", "Stage Display (Confidence Monitor)\tCtrl+Shift+D"}));
         QVERIFY(findAction(menus[4], QStringLiteral("Go Live\tF5"))->isEnabled()); // Milestone 4
         QVERIFY(findAction(menus[4], QStringLiteral("Black\tCtrl+B"))->isCheckable());
+        QVERIFY(findAction(menus[4], QStringLiteral("Stage Display (Confidence Monitor)\tCtrl+Shift+D"))->isEnabled());
         QCOMPARE(actionTexts(menus[6]).first(), QStringLiteral("Default Profile"));
         QVERIFY(findAction(menus[6], QStringLiteral("Default Profile"))->isChecked());
         QVERIFY(findAction(menus[7], QStringLiteral("About LuxPresenter"))->isEnabled());
@@ -1744,6 +1747,39 @@ private slots:
         QCOMPARE(dlg.windowTitle(), QStringLiteral("Software Update"));
         QCOMPARE(dlg.releaseUrl(), info.releaseUrl);
         QVERIFY(!dlg.windowIcon().isNull());
+    }
+
+    void stageDisplayAndServerBasics()
+    {
+        StageServer server(8990);
+        QVERIFY(server.isRunning());
+        QVERIFY(server.serverPort() >= 8990);
+
+        const auto ips = StageServer::getLocalIpAddresses();
+        QVERIFY(!ips.isEmpty());
+        QVERIFY(!StageServer::primaryLocalIpAddress().isEmpty());
+        QVERIFY(server.stageUrl().contains(QStringLiteral("/stage")));
+
+        StageState state;
+        state.title = QStringLiteral("Amazing Grace");
+        state.currentSlide = QStringLiteral("Amazing grace how sweet the sound");
+        state.nextSlide = QStringLiteral("That saved a wretch like me");
+        state.time = QStringLiteral("10:30:00");
+        state.alertMessage = QStringLiteral("Car B 1234 CD");
+        state.isBlack = false;
+        state.isClear = false;
+
+        server.updateState(state);
+        const StageState fetched = server.currentState();
+        QCOMPARE(fetched.title, QStringLiteral("Amazing Grace"));
+        QCOMPARE(fetched.currentSlide, QStringLiteral("Amazing grace how sweet the sound"));
+        QCOMPARE(fetched.nextSlide, QStringLiteral("That saved a wretch like me"));
+        QCOMPARE(fetched.alertMessage, QStringLiteral("Car B 1234 CD"));
+
+        StageWindow stageWin;
+        QCOMPARE(stageWin.windowTitle(), QStringLiteral("LuxPresenter - Stage Display (Confidence Monitor)"));
+        stageWin.updateState(state);
+        QVERIFY(!stageWin.windowIcon().isNull());
     }
 };
 

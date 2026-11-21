@@ -1,6 +1,12 @@
 #include "Views/OptionsDialog.h"
 #include "Services/AdBlockService.h"
+#include "Services/StageServer.h"
 #include "Services/ThemeService.h"
+#include <QClipboard>
+#include <QDesktopServices>
+#include <QGuiApplication>
+#include <QLineEdit>
+#include <QUrl>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -246,6 +252,34 @@ QWidget* OptionsDialog::buildGeneral()
     ml->addRow(QStringLiteral("Left:"), m_marginLeft);
     ml->addRow(QStringLiteral("Right:"), m_marginRight);
     v->addWidget(mg);
+
+    auto* stageBox = new QGroupBox(QStringLiteral("Stage Display (Confidence Monitor)"));
+    auto* sbl = new QVBoxLayout(stageBox);
+    sbl->setSpacing(8);
+    auto* desc = new QLabel(QStringLiteral("Worship leaders, singers, and stage TVs can access the live confidence monitor in their browser over Wi-Fi without any HDMI splitter:"), stageBox);
+    desc->setWordWrap(true);
+    sbl->addWidget(desc);
+
+    auto* urlRow = new QHBoxLayout;
+    const QString stageUrl = QStringLiteral("http://%1:8080/stage").arg(StageServer::primaryLocalIpAddress());
+    auto* urlEdit = new QLineEdit(stageUrl, stageBox);
+    urlEdit->setReadOnly(true);
+    urlRow->addWidget(urlEdit, 1);
+
+    auto* copyBtn = new QPushButton(QStringLiteral("Copy Link"), stageBox);
+    connect(copyBtn, &QPushButton::clicked, urlEdit, [urlEdit] {
+        QGuiApplication::clipboard()->setText(urlEdit->text());
+    });
+    urlRow->addWidget(copyBtn);
+
+    auto* openBtn = new QPushButton(QStringLiteral("Open in Browser"), stageBox);
+    connect(openBtn, &QPushButton::clicked, urlEdit, [urlEdit] {
+        QDesktopServices::openUrl(QUrl(urlEdit->text()));
+    });
+    urlRow->addWidget(openBtn);
+    sbl->addLayout(urlRow);
+
+    v->addWidget(stageBox);
     v->addStretch(1);
     return w;
 }

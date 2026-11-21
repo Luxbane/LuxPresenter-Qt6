@@ -6,9 +6,11 @@
 #include "Services/SongImportExport.h"
 #include "Services/SongSearch.h"
 #include "Services/TextRepair.h"
+#include "Services/StageServer.h"
 #include "Services/ThemeService.h"
 #include "Services/UpdateService.h"
 #include "Views/AboutWindow.h"
+#include "Views/StageWindow.h"
 #include "Views/Components/ClassicButton.h"
 #include "Views/Components/LibraryView.h"
 #include "Views/Components/MediaTab.h"
@@ -85,6 +87,11 @@ MainWindow::MainWindow(DataService& data, QWidget* parent) : QMainWindow(parent)
     m_adBlock->setEnabled(m_data.settings().adBlockEnabled);
     m_adBlock->setWhitelist(m_data.settings().adBlockWhitelist);
     m_adBlock->reload();
+    m_stageServer = new StageServer(8080, this);
+    m_stageWindow = new StageWindow(this);
+    m_stageTimer.setInterval(250);
+    connect(&m_stageTimer, &QTimer::timeout, this, &MainWindow::updateStageDisplay);
+    m_stageTimer.start();
     resize(1024, 620);
     setMinimumSize(750, 460);
 
@@ -233,6 +240,10 @@ void MainWindow::buildMenus()
     live->addSeparator();
     m_displayMenu = live->addMenu(QStringLiteral("Output Display"));
     connect(m_displayMenu, &QMenu::aboutToShow, this, &MainWindow::rebuildDisplayMenu);
+    live->addSeparator();
+    QAction* stageAct = live->addAction(QStringLiteral("Stage Display (Confidence Monitor)\tCtrl+Shift+D"));
+    stageAct->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_D));
+    connect(stageAct, &QAction::triggered, this, &MainWindow::toggleStageWindow);
 
     QMenu* view = bar->addMenu(QStringLiteral("&View"));
     m_themeAction = view->addAction(QString());
@@ -353,6 +364,7 @@ void MainWindow::buildToolbar()
     connect(logo, &QAbstractButton::toggled, this, [this](bool on) {
         m_projection->toggleLogo(on);
         syncLiveAction(m_logoAction, on);
+        updateStageDisplay();
     });
 
     auto* black = track(new ClassicButton(ClassicButton::Kind::Toggle, frame));
@@ -364,6 +376,7 @@ void MainWindow::buildToolbar()
         m_projection->toggleBlack(on);
         m_live->canvas()->setBlack(on);
         syncLiveAction(m_blackAction, on);
+        updateStageDisplay();
     });
 
     auto* clear = track(new ClassicButton(ClassicButton::Kind::Toggle, frame));
@@ -375,6 +388,7 @@ void MainWindow::buildToolbar()
         m_projection->toggleClear(on);
         m_live->canvas()->setTextCleared(on);
         syncLiveAction(m_clearAction, on);
+        updateStageDisplay();
     });
 
     auto* liveToggle = track(new ClassicButton(ClassicButton::Kind::Live, frame));
@@ -1130,6 +1144,54 @@ void MainWindow::checkForUpdates()
     m_updateService->checkForUpdates(this, /*interactive=*/true);
 }
 
+void MainWindow::toggleStageWindow()
+{
+    if (!m_stageWindow)
+        m_stageWindow = new StageWindow(this);
+
+    if (m_stageWindow->isVisible()) {
+        m_stageWindow->hide();
+    } else {
+        updateStageDisplay();
+        m_stageWindow->show();
+        m_stageWindow->raise();
+        m_stageWindow->activateWindow();
+    }
+}
+
+void MainWindow::updateStageDisplay()
+{
+    StageState s;
+    s.time = QTime::currentTime().toString(QStringLiteral("HH:mm:ss"));
+    s.isBlack = m_projection ? m_projection->state().isBlack : false;
+    s.isClear = m_projection ? m_projection->state().isClear : false;
+    s.alertMessage = AlertService::instance().isAlertVisible() ? AlertService::instance().currentActiveMessage().text : QString();
+
+    if (m_live) {
+        s.title = m_live->itemTitle();
+        if (m_live->hasDocument()) {
+            s.currentSlide = QStringLiteral("Slide %1").arg(m_live->documentPage() + 1);
+            s.nextSlide = QStringLiteral("Slide %1").arg(m_live->documentPage() + 2);
+        } else {
+            const auto slides = m_live->slides();
+            const int idx = m_live->currentSlideIndex();
+            if (idx >= 0 && idx < slides.size()) {
+                s.currentSlide = slides[idx].content;
+            }
+            if (idx + 1 < slides.size()) {
+                s.nextSlide = slides[idx + 1].content;
+            } else if (!slides.isEmpty()) {
+                s.nextSlide = QStringLiteral("(End of item)");
+            }
+        }
+    }
+
+    if (m_stageServer)
+        m_stageServer->updateState(s);
+    if (m_stageWindow && m_stageWindow->isVisible())
+        m_stageWindow->updateState(s);
+}
+
 void MainWindow::openSongsFolder()
 {
     QDir().mkpath(AppPaths::songsDirectory());
@@ -1325,6 +1387,7 @@ void MainWindow::applyLiveSlide(int index)
     m_projection->setLiveSlide(slides.at(index), m_liveBackground);
     const QString label = displayText(slides.at(index).label);
     setStatusText(QStringLiteral("Live: %1 - %2").arg(displayText(m_live->itemTitle()), label));
+    updateStageDisplay();
 }
 
 void MainWindow::goLive(int slideIndex)
@@ -1396,6 +1459,7 @@ void MainWindow::goLive(int slideIndex)
     }
     m_projection->showWindow();
     updateDisplayStatus();
+    updateStageDisplay();
 }
 
 void MainWindow::toggleBlack() { m_blackButton->click(); }

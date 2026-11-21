@@ -91,7 +91,10 @@ add_library(luxui STATIC
     src/Services/BackgroundThumbnails.cpp
     src/Services/AdBlockService.cpp
     src/Services/PresentationService.cpp
+    src/Services/StageServer.cpp
     src/Services/UpdateService.cpp
+    src/Views/SplashScreen.cpp
+    src/Views/StageWindow.cpp
     src/Views/UpdateDialog.cpp
     src/Views/Components/PageView.cpp
     src/Views/Components/WebView2Host.cpp

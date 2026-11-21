@@ -326,20 +326,32 @@ void ProjectionComposer::applyState(const ProjectionState& st)
     // 1. Black overlay (also used for "output off")
     const bool shouldBlack = !st.isLive || st.isBlack;
     setBlackOverlay(shouldBlack, screenTr, duration, t);
-    if (shouldBlack) {
-        setLogoOverlay(false, screenTr, duration, t);
+
+    // 2. Logo overlay (shown when active and screen is not blacked out)
+    setLogoOverlay(!shouldBlack && st.isLogo, screenTr, duration, t);
+
+    // Silent Instant Transition: while the screen is blacked out or showing logo,
+    // all underlying slide, text, and background changes must happen instantaneously (0 ms cut)
+    // behind the curtain so that no stale background flashes when black/logo is toggled off.
+    const bool isCovered = shouldBlack || st.isLogo;
+    const int effectiveDuration = isCovered ? 0 : duration;
+    const QString effectiveSongTr = isCovered ? QStringLiteral("Cut") : st.songTransition;
+    const QString effectiveSlideTr = isCovered ? QStringLiteral("Cut") : st.slideTransition;
+    const QString effectiveMediaTr = isCovered ? QStringLiteral("Cut") : st.mediaTransition;
+
+    if (isCovered) {
         if ((m_bgVideoActive || m_inVideoMode) && !m_videoPaused) {
             emitVideo(VideoCommand::Kind::Pause);
             m_videoPaused = true;
         }
-        return;
-    }
-    if (m_videoPaused && ((m_inVideoMode && st.isVideoPlaying) || (!m_inVideoMode && m_bgVideoActive))) {
-        emitVideo(VideoCommand::Kind::Resume);
-        m_videoPaused = false;
-    } else if (m_inVideoMode && !st.isVideoPlaying && !m_videoPaused) {
-        emitVideo(VideoCommand::Kind::Pause);
-        m_videoPaused = true;
+    } else {
+        if (m_videoPaused && ((m_inVideoMode && st.isVideoPlaying) || (!m_inVideoMode && m_bgVideoActive))) {
+            emitVideo(VideoCommand::Kind::Resume);
+            m_videoPaused = false;
+        } else if (m_inVideoMode && !st.isVideoPlaying && !m_videoPaused) {
+            emitVideo(VideoCommand::Kind::Pause);
+            m_videoPaused = true;
+        }
     }
 
     // Presentation document page: black backdrop, the page fitted into the output (no slide text/background).
@@ -429,22 +441,19 @@ void ProjectionComposer::applyState(const ProjectionState& st)
         m_rootBackground = QStringLiteral("#001833");
     }
 
-    // 2. Logo overlay
-    setLogoOverlay(st.isLogo, screenTr, duration, t);
-    if (st.isLogo) {
-        m_first = false;
-        return;
+    // 3. Background (colour / image / video, with blend or instant cut if covered)
+    applyBackground(st.activeBackground, effectiveSongTr, effectiveDuration, t);
+    if (isCovered && m_bgVideoActive && !m_videoPaused) {
+        emitVideo(VideoCommand::Kind::Pause);
+        m_videoPaused = true;
     }
-
-    // 3. Background (colour / image / video, with blend)
-    applyBackground(st.activeBackground, st.songTransition, duration, t);
 
     // 4. Clear text
     bool wasCleared = m_clearShown;
     if (st.isClear) {
         if (!m_clearShown || m_slideFade[0].value(t) > 0.01 || m_slideFade[1].value(t) > 0.01) {
             m_clearShown = true;
-            fadeSlides(0.0, duration, isBlend(st.screenTransition), t);
+            fadeSlides(0.0, effectiveDuration, isBlend(st.screenTransition) && effectiveDuration > 0, t);
         }
         m_first = false;
         return;
@@ -456,7 +465,7 @@ void ProjectionComposer::applyState(const ProjectionState& st)
 
     // 5. Slide display with double-buffer crossfade
     if (!st.activeSlide) {
-        fadeSlides(0.0, duration, isBlend(st.slideTransition), t);
+        fadeSlides(0.0, effectiveDuration, isBlend(effectiveSlideTr) && effectiveDuration > 0, t);
         m_hasLast = false;
         m_lastSlideId.clear();
         m_lastText.clear();
@@ -525,12 +534,12 @@ void ProjectionComposer::applyState(const ProjectionState& st)
         m_prepare(next);
     const qint64 tf = now();   // the transition starts after the preparation work, not before it
 
-    const bool useBlend = isBlend(st.slideTransition) && !m_first;
-    if (useBlend && duration > 0) {
-        m_slideFade[next].run(0.0, 1.0, duration, tf);
+    const bool useBlend = isBlend(effectiveSlideTr) && !m_first && effectiveDuration > 0;
+    if (useBlend) {
+        m_slideFade[next].run(0.0, 1.0, effectiveDuration, tf);
         const double curOut = wasCleared ? 0.0 : (m_slideFade[out].value(tf) > 0.05 ? m_slideFade[out].value(tf) : 1.0);
         if (curOut > 0.01)
-            m_slideFade[out].run(curOut, 0.0, duration, tf);
+            m_slideFade[out].run(curOut, 0.0, effectiveDuration, tf);
         else
             m_slideFade[out].set(0.0);
     } else {

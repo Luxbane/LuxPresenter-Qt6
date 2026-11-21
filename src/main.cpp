@@ -34,6 +34,8 @@
 #include <QThread>
 #include "Views/BackgroundDialog.h"
 #include "Views/OptionsDialog.h"
+#include "Views/SplashScreen.h"
+#include <QMessageBox>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -55,15 +57,54 @@ int main(int argc, char* argv[])
     base.setPixelSize(12);
     QApplication::setFont(base);
 
+    const QStringList args = app.arguments();
+    const bool showSplash = !args.contains(QStringLiteral("--no-splash")) &&
+                            !args.contains(QStringLiteral("--screenshot")) &&
+                            !args.contains(QStringLiteral("--dialog")) &&
+                            !args.contains(QStringLiteral("--projection-test")) &&
+                            !args.contains(QStringLiteral("--present-test")) &&
+                            !args.contains(QStringLiteral("--online-test"));
+
+    std::unique_ptr<Lux::SplashScreen> splash;
+    if (showSplash) {
+        splash = std::make_unique<Lux::SplashScreen>();
+        splash->show();
+        splash->setProgress(10, QStringLiteral("Loading user preferences and theme..."));
+    }
+
     Lux::DataService data;
     Lux::ThemeService::instance().apply(data.settings().isDarkMode);
 
+    if (splash)
+        splash->setProgress(25, QStringLiteral("Detecting display monitors and presentation screens..."));
+
+    if (splash)
+        splash->setProgress(40, QStringLiteral("Initializing hardware video and media engines..."));
+
+    if (splash)
+        splash->setProgress(60, QStringLiteral("Loading songs database, bibles, and media library..."));
+
     Lux::MainWindow window(data);
+
+    if (splash)
+        splash->setProgress(80, QStringLiteral("Preparing presentation workspace and stage display..."));
+
+    if (splash)
+        splash->setProgress(95, QStringLiteral("Cleaning temporary presentation cache files..."));
+
+    data.cleanupOrphanedData();
+
+    if (splash) {
+        splash->setProgress(100, QStringLiteral("Ready"));
+        QThread::msleep(180);
+        splash->close();
+    }
+
     window.showMaximized();
+    window.activateWindow();
 
     // Developer aids: "--tab N" selects a library tab, "--select-song N" previews the N-th listed song and adds
     // it to the schedule, "--screenshot out.png" saves the main window and exits.
-    const QStringList args = app.arguments();
     const int pick = static_cast<int>(args.indexOf(QStringLiteral("--select-song")));
     if (pick >= 0 && pick + 1 < args.size()) {
         const auto songs = window.songsTab()->filteredSongs();

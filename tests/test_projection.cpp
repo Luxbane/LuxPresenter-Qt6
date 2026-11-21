@@ -929,6 +929,49 @@ private slots:
         vp.end();
         QCOMPARE(qAlpha(vimg.pixel(5, 5)), 0);
     }
+
+    void silentInstantTransitionBehindBlackScreen()
+    {
+        QTemporaryDir dir;
+        const QString imgA = touch(dir, QStringLiteral("a.png"));
+        const QString imgB = touch(dir, QStringLiteral("b.png"));
+
+        Clocked k;
+        ProjectionState st = baseState();
+        st.activeSlide = slide(QStringLiteral("S1"), QStringLiteral("Song 1 lyrics"));
+        st.activeBackground = imgA;
+        st.transitionDurationMs = 500;
+        k.c.applyState(st);
+
+        // Background A is active
+        QCOMPARE(k.c.currentBackground(), imgA);
+        QVERIFY(!k.c.blackVisible());
+
+        // 1. Black Screen engaged (Ctrl+B)
+        k.now = 1000;
+        st.isBlack = true;
+        k.c.applyState(st);
+        QVERIFY(k.c.blackVisible());
+
+        // 2. Operator selects Song 2 with Background B and goes live while screen is blacked out
+        k.now = 2000;
+        st.activeSlide = slide(QStringLiteral("S2"), QStringLiteral("Song 2 lyrics"));
+        st.activeBackground = imgB;
+        k.c.applyState(st);
+
+        // Behind the curtain: Background B must be applied immediately (0 ms cut), not skipped!
+        QCOMPARE(k.c.currentBackground(), imgB);
+        QCOMPARE(k.c.slideLayer(k.c.activeSlideLayer()).slide.label, QStringLiteral("S2"));
+
+        // 3. Black Screen disengaged (Ctrl+B turned off)
+        k.now = 3000;
+        st.isBlack = false;
+        k.c.applyState(st);
+
+        // When black is removed, Background B is already fully present underneath without any stale Background A leak!
+        QCOMPARE(k.c.currentBackground(), imgB);
+        QCOMPARE(k.c.slideLayer(k.c.activeSlideLayer()).slide.label, QStringLiteral("S2"));
+    }
 };
 
 QTEST_MAIN(ProjectionTests)
