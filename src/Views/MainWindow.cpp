@@ -88,6 +88,8 @@ MainWindow::MainWindow(DataService& data, QWidget* parent) : QMainWindow(parent)
     m_adBlock->setWhitelist(m_data.settings().adBlockWhitelist);
     m_adBlock->reload();
     m_stageServer = new StageServer(8080, this);
+    if (!m_data.settings().stageServerEnabled)
+        m_stageServer->stop();
     m_stageWindow = new StageWindow(this);
     m_stageTimer.setInterval(250);
     connect(&m_stageTimer, &QTimer::timeout, this, &MainWindow::updateStageDisplay);
@@ -1167,6 +1169,11 @@ void MainWindow::toggleStageWindow()
 
 void MainWindow::updateStageDisplay()
 {
+    const bool serverRunning = m_stageServer && m_stageServer->isRunning();
+    const bool windowVisible = m_stageWindow && m_stageWindow->isVisible();
+    if (!serverRunning && !windowVisible)
+        return;
+
     StageState s;
     s.time = QTime::currentTime().toString(QStringLiteral("HH:mm:ss"));
     s.isBlack = m_projection ? m_projection->state().isBlack : false;
@@ -1356,6 +1363,12 @@ void MainWindow::applySettings(const AppSettings& in)
         applyOutputDisplayByName(s.outputDisplay);
     m_adBlock->setEnabled(s.adBlockEnabled);
     m_adBlock->setWhitelist(s.adBlockWhitelist);
+    if (m_stageServer && s.stageServerEnabled != old.stageServerEnabled) {
+        if (s.stageServerEnabled)
+            m_stageServer->start(8080);
+        else
+            m_stageServer->stop();
+    }
     m_preview->setSettings(s);
     m_live->setSettings(s);
     // Songs are formatted when they are loaded into Preview: load the staged library song again.

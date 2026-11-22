@@ -120,6 +120,7 @@ QJsonObject AppSettings::toJson() const
     o[QStringLiteral("AdBlockWhitelist")] = Json::fromStringList(adBlockWhitelist);
     o[QStringLiteral("DeletedBuiltinBackgrounds")] = Json::fromStringList(deletedBuiltinBackgrounds);
     o[QStringLiteral("IsMediaGridView")] = isMediaGridView;
+    o[QStringLiteral("StageServerEnabled")] = stageServerEnabled;
     return o;
 }
 
@@ -165,6 +166,7 @@ AppSettings AppSettings::fromJson(const QJsonObject& o)
     s.adBlockWhitelist = Json::stringList(o, QStringLiteral("AdBlockWhitelist"));
     s.deletedBuiltinBackgrounds = Json::stringList(o, QStringLiteral("DeletedBuiltinBackgrounds"));
     s.isMediaGridView = Json::boolean(o, QStringLiteral("IsMediaGridView"), d.isMediaGridView);
+    s.stageServerEnabled = Json::boolean(o, QStringLiteral("StageServerEnabled"), d.stageServerEnabled);
     s.sanitize();
     return s;
 }

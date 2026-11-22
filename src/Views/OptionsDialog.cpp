@@ -256,28 +256,41 @@ QWidget* OptionsDialog::buildGeneral()
     auto* stageBox = new QGroupBox(QStringLiteral("Stage Display (Confidence Monitor)"));
     auto* sbl = new QVBoxLayout(stageBox);
     sbl->setSpacing(8);
+
+    m_stageServerEnabled = new QCheckBox(QStringLiteral("Enable Web Stage Server (Wi-Fi access on port 8080)"), stageBox);
+    m_stageServerEnabled->setChecked(m_base.stageServerEnabled);
+    sbl->addWidget(m_stageServerEnabled);
+
     auto* desc = new QLabel(QStringLiteral("Worship leaders, singers, and stage TVs can access the live confidence monitor in their browser over Wi-Fi without any HDMI splitter:"), stageBox);
     desc->setWordWrap(true);
     sbl->addWidget(desc);
 
     auto* urlRow = new QHBoxLayout;
     const QString stageUrl = QStringLiteral("http://%1:8080/stage").arg(StageServer::primaryLocalIpAddress());
-    auto* urlEdit = new QLineEdit(stageUrl, stageBox);
-    urlEdit->setReadOnly(true);
-    urlRow->addWidget(urlEdit, 1);
+    m_stageUrlEdit = new QLineEdit(stageUrl, stageBox);
+    m_stageUrlEdit->setReadOnly(true);
+    urlRow->addWidget(m_stageUrlEdit, 1);
 
-    auto* copyBtn = new QPushButton(QStringLiteral("Copy Link"), stageBox);
-    connect(copyBtn, &QPushButton::clicked, urlEdit, [urlEdit] {
-        QGuiApplication::clipboard()->setText(urlEdit->text());
+    m_stageCopyBtn = new QPushButton(QStringLiteral("Copy Link"), stageBox);
+    connect(m_stageCopyBtn, &QPushButton::clicked, m_stageUrlEdit, [this] {
+        QGuiApplication::clipboard()->setText(m_stageUrlEdit->text());
     });
-    urlRow->addWidget(copyBtn);
+    urlRow->addWidget(m_stageCopyBtn);
 
-    auto* openBtn = new QPushButton(QStringLiteral("Open in Browser"), stageBox);
-    connect(openBtn, &QPushButton::clicked, urlEdit, [urlEdit] {
-        QDesktopServices::openUrl(QUrl(urlEdit->text()));
+    m_stageOpenBtn = new QPushButton(QStringLiteral("Open in Browser"), stageBox);
+    connect(m_stageOpenBtn, &QPushButton::clicked, m_stageUrlEdit, [this] {
+        QDesktopServices::openUrl(QUrl(m_stageUrlEdit->text()));
     });
-    urlRow->addWidget(openBtn);
+    urlRow->addWidget(m_stageOpenBtn);
     sbl->addLayout(urlRow);
+
+    auto updateStageControls = [this](bool enabled) {
+        if (m_stageUrlEdit) m_stageUrlEdit->setEnabled(enabled);
+        if (m_stageCopyBtn) m_stageCopyBtn->setEnabled(enabled);
+        if (m_stageOpenBtn) m_stageOpenBtn->setEnabled(enabled);
+    };
+    updateStageControls(m_stageServerEnabled->isChecked());
+    connect(m_stageServerEnabled, &QCheckBox::toggled, this, updateStageControls);
 
     v->addWidget(stageBox);
     v->addStretch(1);
@@ -459,6 +472,8 @@ AppSettings OptionsDialog::settings() const
     s.transitionDurationMs = m_duration->currentData().toInt();
     s.adBlockEnabled = m_adBlock->isChecked();
     s.adBlockWhitelist = m_whitelist->toPlainText().split(QRegularExpression(QStringLiteral("[\\r\\n,;\\s]+")), Qt::SkipEmptyParts);
+    if (m_stageServerEnabled)
+        s.stageServerEnabled = m_stageServerEnabled->isChecked();
     s.sanitize();
     return s;
 }

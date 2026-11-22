@@ -27,6 +27,8 @@ public:
     explicit StageServer(quint16 port = 8080, QObject* parent = nullptr);
     ~StageServer() override;
 
+    bool start(quint16 port = 8080);
+    void stop();
     bool isRunning() const;
     quint16 serverPort() const { return m_port; }
 

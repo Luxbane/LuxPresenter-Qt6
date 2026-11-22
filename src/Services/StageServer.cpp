@@ -16,24 +16,33 @@ StageServer::StageServer(quint16 port, QObject* parent)
     , m_server(new QTcpServer(this))
     , m_port(port)
 {
-    // Try binding to 0.0.0.0 (in-addr any) so all network interfaces (Wi-Fi, LAN, hotspot) can connect.
-    bool bound = false;
-    for (quint16 p = port; p < port + 10; ++p) {
-        if (m_server->listen(QHostAddress::Any, p)) {
-            m_port = p;
-            bound = true;
-            break;
-        }
-    }
-
-    if (bound) {
-        connect(m_server, &QTcpServer::newConnection, this, &StageServer::onNewConnection);
-    }
+    connect(m_server, &QTcpServer::newConnection, this, &StageServer::onNewConnection);
+    start(port);
 }
 
 StageServer::~StageServer()
 {
-    if (m_server) {
+    stop();
+}
+
+bool StageServer::start(quint16 port)
+{
+    if (isRunning())
+        return true;
+
+    // Try binding to 0.0.0.0 (in-addr any) so all network interfaces (Wi-Fi, LAN, hotspot) can connect.
+    for (quint16 p = port; p < port + 10; ++p) {
+        if (m_server->listen(QHostAddress::Any, p)) {
+            m_port = p;
+            return true;
+        }
+    }
+    return false;
+}
+
+void StageServer::stop()
+{
+    if (m_server && m_server->isListening()) {
         m_server->close();
     }
 }

@@ -5,8 +5,10 @@
 class QCheckBox;
 class QComboBox;
 class QFontComboBox;
+class QLineEdit;
 class QListWidget;
 class QPlainTextEdit;
+class QPushButton;
 class QRadioButton;
 class QSpinBox;
 class QStackedWidget;
@@ -41,6 +43,10 @@ private:
     QRadioButton *m_light = nullptr, *m_dark = nullptr;
     QComboBox* m_outputDisplay = nullptr;
     QSpinBox *m_marginTop = nullptr, *m_marginBottom = nullptr, *m_marginLeft = nullptr, *m_marginRight = nullptr;
+    QCheckBox* m_stageServerEnabled = nullptr;
+    QLineEdit* m_stageUrlEdit = nullptr;
+    QPushButton* m_stageCopyBtn = nullptr;
+    QPushButton* m_stageOpenBtn = nullptr;
     // Songs
     QComboBox *m_textAlign = nullptr, *m_vertAlign = nullptr, *m_fontSize = nullptr;
     QFontComboBox* m_unused = nullptr;

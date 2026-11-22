@@ -62,6 +62,7 @@ struct AppSettings
     QStringList adBlockWhitelist;                // host names for which blocking is off
     QStringList deletedBuiltinBackgrounds;       // built-in background IDs that the user removed
     bool isMediaGridView = true;                 // Media library view: true = grid (thumbnails), false = list
+    bool stageServerEnabled = true;              // Web stage display HTTP server
 
     // Brings every value into its valid range / allowed set (a hand-edited or damaged settings.json cannot break
     // the application). Called whenever settings are read or applied.

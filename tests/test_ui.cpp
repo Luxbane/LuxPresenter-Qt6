@@ -1776,6 +1776,11 @@ private slots:
         QCOMPARE(fetched.nextSlide, QStringLiteral("That saved a wretch like me"));
         QCOMPARE(fetched.alertMessage, QStringLiteral("Car B 1234 CD"));
 
+        server.stop();
+        QVERIFY(!server.isRunning());
+        server.start(8990);
+        QVERIFY(server.isRunning());
+
         StageWindow stageWin;
         QCOMPARE(stageWin.windowTitle(), QStringLiteral("LuxPresenter - Stage Display (Confidence Monitor)"));
         stageWin.updateState(state);
