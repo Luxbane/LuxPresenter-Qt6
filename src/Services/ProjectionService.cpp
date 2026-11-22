@@ -106,6 +106,13 @@ bool ProjectionService::isWindowShown() const
     return m_output && m_output->isShown();
 }
 
+void ProjectionService::preWarm()
+{
+    IProjectionOutput* out = ensureOutput();
+    if (out)
+        out->preWarm();
+}
+
 void ProjectionService::push()
 {
     if (m_output && m_output->isShown())

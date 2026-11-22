@@ -209,6 +209,15 @@ void OnlineBrowserView::updateAdBlockUi()
 
 bool OnlineBrowserView::isUnavailable() const { return m_host->state() == WebView2Host::State::Unavailable; }
 
+void OnlineBrowserView::teardown()
+{
+    if (m_host)
+        m_host->shutdown();
+    setNavigationEnabled(false);
+    m_url->clear();
+    m_stack->setCurrentWidget(m_host);
+}
+
 void OnlineBrowserView::showEvent(QShowEvent* e)
 {
     QWidget::showEvent(e);

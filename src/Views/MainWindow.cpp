@@ -650,10 +650,16 @@ void MainWindow::addPassageToSchedule(const BiblePassage& p)
 }
 void MainWindow::onLibraryTabChanged(int index)
 {
+    const bool wasOnline = m_onlineMode;
     m_onlineMode = (index == LibraryView::kOnlineTab);
     if (!m_onlineMode)
         m_lastLibraryTab = index;
     m_workStack->setCurrentIndex(m_onlineMode ? 1 : 0);
+
+    if (wasOnline && !m_onlineMode && m_online) {
+        // Leaving Online browser: fully terminate WebView2 processes and release RAM/VRAM
+        m_online->teardown();
+    }
 
     if (m_onlineMode)
         return;

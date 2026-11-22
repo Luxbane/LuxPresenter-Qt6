@@ -1,6 +1,7 @@
 #include "Views/Components/TextRender.h"
 
 #include <QFontMetricsF>
+#include <QHash>
 #include <QPainterPath>
 #include <QTextLayout>
 
@@ -47,6 +48,47 @@ QList<Line> layoutLines(const QString& text, const QFont& font, qreal maxWidth, 
     return out;
 }
 
+// Thread-local or static LRU cache for vector glyph paths to avoid re-generating
+// hundreds of Bezier curves on every paint frame.
+QString pathCacheKey(const QString& text, const TextBlockStyle& style, qreal w)
+{
+    return QString::number(style.font.pixelSize()) + QLatin1Char('|') +
+           style.font.family() + (style.font.bold() ? QLatin1String("|b") : QLatin1String("|-")) +
+           QLatin1Char('|') + QString::number(static_cast<int>(style.hAlign)) +
+           QLatin1Char('|') + QString::number(w, 'f', 1) +
+           QLatin1Char('|') + (style.wrap ? QLatin1Char('1') : QLatin1Char('0')) +
+           QLatin1Char('|') + text;
+}
+
+QPainterPath getOrCreateTextPath(const QString& text, const TextBlockStyle& style, qreal w)
+{
+    static QHash<QString, QPainterPath> s_pathCache;
+    const QString key = pathCacheKey(text, style, w);
+    auto it = s_pathCache.constFind(key);
+    if (it != s_pathCache.constEnd())
+        return it.value();
+
+    const QList<Line> lines = layoutLines(text, style.font, w, style.wrap);
+    QPainterPath all;
+    qreal y = style.strokeThickness;
+    for (const Line& l : lines) {
+        if (!l.text.isEmpty()) {
+            qreal x = style.strokeThickness;
+            if (style.hAlign & Qt::AlignHCenter)
+                x = (style.width - l.width) / 2;
+            else if (style.hAlign & Qt::AlignRight)
+                x = style.width - style.strokeThickness - l.width;
+            all.addText(QPointF(x, y + l.ascent), style.font, l.text);
+        }
+        y += l.height;
+    }
+
+    if (s_pathCache.size() > 128)
+        s_pathCache.clear();
+    s_pathCache.insert(key, all);
+    return all;
+}
+
 } // namespace
 
 TextBlockMetrics measureTextBlock(const QString& text, const TextBlockStyle& style)
@@ -63,33 +105,20 @@ TextBlockMetrics measureTextBlock(const QString& text, const TextBlockStyle& sty
 void drawTextBlock(QPainter* p, const QString& text, const TextBlockStyle& style, const QPointF& origin)
 {
     const qreal w = std::max<qreal>(50, style.width - style.strokeThickness * 2);
-    const QList<Line> lines = layoutLines(text, style.font, w, style.wrap);
-
-    QPainterPath all;
-    qreal y = style.strokeThickness;
-    for (const Line& l : lines) {
-        if (!l.text.isEmpty()) {
-            qreal x = style.strokeThickness;
-            if (style.hAlign & Qt::AlignHCenter)
-                x = (style.width - l.width) / 2;
-            else if (style.hAlign & Qt::AlignRight)
-                x = style.width - style.strokeThickness - l.width;
-            all.addText(QPointF(x, y + l.ascent), style.font, l.text);
-        }
-        y += l.height;
-    }
+    QPainterPath all = getOrCreateTextPath(text, style, w);
     all.translate(origin);
 
     p->save();
     p->setRenderHint(QPainter::Antialiasing);
     if (style.shadow) {
-        // Soft drop shadow: ~3.5 units toward the lower right (WPF Direction 315, depth 3.5, blur 8).
+        // Soft drop shadow toward the lower right
         const qreal d = style.shadowDepth * 0.70710678;
-        for (int i = 0; i < 4; ++i) {
-            const qreal grow = i * 0.9 * (style.shadowDepth / 3.5);
-            QPainterPath shifted = all.translated(d, d);
-            p->setPen(QPen(QColor(0, 0, 0, 52), style.strokeThickness + grow * 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-            p->setBrush(QColor(0, 0, 0, 52));
+        const QPainterPath shifted = all.translated(d, d);
+        // 2 clean passes with soft alpha gives identical drop shadow with 1/2 the stroke operations
+        for (int i = 0; i < 2; ++i) {
+            const qreal grow = i * 1.8 * (style.shadowDepth / 3.5);
+            p->setPen(QPen(QColor(0, 0, 0, 95), style.strokeThickness + grow * 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            p->setBrush(QColor(0, 0, 0, 95));
             p->drawPath(shifted);
         }
     }

@@ -33,6 +33,7 @@ public:
     QLabel* unavailableLabel() const { return m_unavailable; }
     QProgressBar* loadingBar() const { return m_loading; }
     bool isUnavailable() const;
+    void teardown();
 
     // Ad blocker / uBlock Origin control
     void setAdBlock(AdBlockService* service);

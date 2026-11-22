@@ -146,7 +146,14 @@ WebView2Host::WebView2Host(QWidget* parent) : QWidget(parent), d(std::make_uniqu
 
 WebView2Host::~WebView2Host()
 {
-    cleanupBrowsingDataSync(1500);
+    shutdown();
+}
+
+void WebView2Host::shutdown()
+{
+    if (m_state == State::NotStarted)
+        return;
+    cleanupBrowsingDataSync(500);
     if (d->view) {
         d->view->remove_NavigationStarting(d->tokStart);
         d->view->remove_NavigationCompleted(d->tokDone);
@@ -155,6 +162,16 @@ WebView2Host::~WebView2Host()
     }
     if (d->controller)
         d->controller->Close();
+    d->view.Reset();
+    d->controller.Reset();
+    d->profile7.Reset();
+    d->uboExtension.Reset();
+    d->env.Reset();
+    m_state = State::NotStarted;
+    m_tried.clear();
+    m_reason.clear();
+    m_current.clear();
+    m_loading = false;
 }
 
 void WebView2Host::fail(const QString& reason)
@@ -688,6 +705,7 @@ struct WebView2Host::Impl {};
 bool WebView2Host::builtWithSdk() { return false; }
 WebView2Host::WebView2Host(QWidget* parent) : QWidget(parent), d(std::make_unique<Impl>()) {}
 WebView2Host::~WebView2Host() = default;
+void WebView2Host::shutdown() { m_state = State::NotStarted; }
 void WebView2Host::fail(const QString& reason) { m_state = State::Unavailable; m_reason = reason; emit unavailable(reason); }
 void WebView2Host::initialize()
 {

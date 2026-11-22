@@ -536,10 +536,14 @@ void ProjectionComposer::applyState(const ProjectionState& st)
 
     const bool useBlend = isBlend(effectiveSlideTr) && !m_first && effectiveDuration > 0;
     if (useBlend) {
-        m_slideFade[next].run(0.0, 1.0, effectiveDuration, tf);
+        // If a transition was already running (rapid navigation / key presses),
+        // fast-forward the incoming slide so text doesn't stay washed out or laggy.
+        const bool wasAnimating = m_slideFade[out].running(tf);
+        const int actualDuration = wasAnimating ? std::min(150, effectiveDuration / 2) : effectiveDuration;
+        m_slideFade[next].run(wasAnimating ? 0.4 : 0.0, 1.0, actualDuration, tf);
         const double curOut = wasCleared ? 0.0 : (m_slideFade[out].value(tf) > 0.05 ? m_slideFade[out].value(tf) : 1.0);
         if (curOut > 0.01)
-            m_slideFade[out].run(curOut, 0.0, effectiveDuration, tf);
+            m_slideFade[out].run(curOut, 0.0, actualDuration, tf);
         else
             m_slideFade[out].set(0.0);
     } else {

@@ -188,46 +188,66 @@ void SlideCanvas::paintEvent(QPaintEvent*)
 
         const QString text = formattedContent();
         if (!text.isEmpty()) {
-            QFont f = slideFont();
             const qreal full = fullScaleFontSize();
-            f.setPixelSize(std::max(1, static_cast<int>(std::lround(full))));
-
-            TextBlockStyle st;
-            st.font = f;
-            st.width = 568 * kFull;
-            st.strokeThickness = 3.0 * kFull;
-            st.outline = m_slide.hasOutline;
-            st.shadow = m_slide.hasShadow;
-            st.shadowDepth = 3.5 * kFull;
-            st.wrap = m_settings.autoWrapWords;
             const QString align = m_settings.songTextAlignment;
-            st.hAlign = align.compare(QStringLiteral("Left"), Qt::CaseInsensitive) == 0   ? Qt::AlignLeft
-                        : align.compare(QStringLiteral("Right"), Qt::CaseInsensitive) == 0 ? Qt::AlignRight
-                                                                                           : Qt::AlignHCenter;
-            TextBlockMetrics m = measureTextBlock(text, st);
-            if (!st.wrap && m.width + 2 * st.strokeThickness > st.width) {
-                st.width = m.width + 2 * st.strokeThickness;
-                m = measureTextBlock(text, st);
-            }
-            const qreal blockW = st.width / kFull, blockH = (m.height + 2 * st.strokeThickness) / kFull;
-
-            // Viewbox (Uniform, DownOnly): shrink if it does not fit the row.
-            const QRectF row(area.left(), area.top() + titleH, area.width(), area.height() - titleH - footerH);
-            const qreal s = std::min({1.0, row.height() / blockH, row.width() / blockW});
-            const qreal drawW = blockW * s, drawH = blockH * s;
             const QString v = m_settings.songVerticalAlignment;
-            qreal y = row.top();
-            if (v.compare(QStringLiteral("Bottom"), Qt::CaseInsensitive) == 0)
-                y = row.bottom() - drawH;
-            else if (v.compare(QStringLiteral("Top"), Qt::CaseInsensitive) != 0)
-                y = row.top() + (row.height() - drawH) / 2;
-            const qreal x = row.left() + (row.width() - drawW) / 2;
+            const QString cacheKey = text + QChar(0x1F) + QString::number(full, 'f', 1) + QChar(0x1F) +
+                                     align + QChar(0x1F) + v + QChar(0x1F) +
+                                     (m_slide.hasOutline ? 'o' : '-') + (m_slide.hasShadow ? 's' : '-') +
+                                     (m_settings.autoWrapWords ? 'w' : '-') +
+                                     QString::number(titleH, 'f', 1) + QChar(0x1F) + QString::number(footerH, 'f', 1);
 
-            p.save();
-            p.translate(x, y);
-            p.scale(s / kFull, s / kFull);
-            drawTextBlock(&p, text, st, QPointF(0, 0));
-            p.restore();
+            if (cacheKey != m_cachedTextKey || m_cachedTextPixmap.isNull()) {
+                QPixmap pm(qRound(kW), qRound(kH));
+                pm.fill(Qt::transparent);
+                QPainter tp(&pm);
+                tp.setRenderHint(QPainter::Antialiasing);
+                tp.setRenderHint(QPainter::TextAntialiasing);
+
+                QFont f = slideFont();
+                f.setPixelSize(std::max(1, static_cast<int>(std::lround(full))));
+
+                TextBlockStyle st;
+                st.font = f;
+                st.width = 568 * kFull;
+                st.strokeThickness = 3.0 * kFull;
+                st.outline = m_slide.hasOutline;
+                st.shadow = m_slide.hasShadow;
+                st.shadowDepth = 3.5 * kFull;
+                st.wrap = m_settings.autoWrapWords;
+                st.hAlign = align.compare(QStringLiteral("Left"), Qt::CaseInsensitive) == 0   ? Qt::AlignLeft
+                            : align.compare(QStringLiteral("Right"), Qt::CaseInsensitive) == 0 ? Qt::AlignRight
+                                                                                               : Qt::AlignHCenter;
+                TextBlockMetrics m = measureTextBlock(text, st);
+                if (!st.wrap && m.width + 2 * st.strokeThickness > st.width) {
+                    st.width = m.width + 2 * st.strokeThickness;
+                    m = measureTextBlock(text, st);
+                }
+                const qreal blockW = st.width / kFull, blockH = (m.height + 2 * st.strokeThickness) / kFull;
+
+                // Viewbox (Uniform, DownOnly): shrink if it does not fit the row.
+                const QRectF row(area.left(), area.top() + titleH, area.width(), area.height() - titleH - footerH);
+                const qreal s = std::min({1.0, row.height() / blockH, row.width() / blockW});
+                const qreal drawW = blockW * s, drawH = blockH * s;
+                qreal y = row.top();
+                if (v.compare(QStringLiteral("Bottom"), Qt::CaseInsensitive) == 0)
+                    y = row.bottom() - drawH;
+                else if (v.compare(QStringLiteral("Top"), Qt::CaseInsensitive) != 0)
+                    y = row.top() + (row.height() - drawH) / 2;
+                const qreal x = row.left() + (row.width() - drawW) / 2;
+
+                tp.save();
+                tp.translate(x, y);
+                tp.scale(s / kFull, s / kFull);
+                drawTextBlock(&tp, text, st, QPointF(0, 0));
+                tp.restore();
+                tp.end();
+
+                m_cachedTextPixmap = pm;
+                m_cachedTextKey = cacheKey;
+            }
+
+            p.drawPixmap(0, 0, m_cachedTextPixmap);
         }
 
         if (showLabel) {

@@ -11,6 +11,7 @@
 #include "Views/Components/PresentationTab.h"
 #include "Views/Components/SlidePaneView.h"
 #include "Views/Components/WebView2Host.h"
+#include "Views/Components/TextRender.h"
 #include <QComboBox>
 #include <QListWidget>
 #include <QProgressBar>
@@ -88,6 +89,37 @@ int main(int argc, char* argv[])
 
     if (splash)
         splash->setProgress(80, QStringLiteral("Preparing presentation workspace and stage display..."));
+
+    if (splash)
+        splash->setProgress(85, QStringLiteral("Pre-warming graphics pipeline and text engine..."));
+
+    {
+        // Pre-warm font engine and TextRender vector path cache
+        QFont dummyFont(QStringLiteral("Tahoma"), 20, QFont::Bold);
+        const QString dummyLyric = QStringLiteral("Amazing grace! How sweet the sound\nThat saved a wretch like me!");
+        Lux::TextBlockStyle dummyStyle;
+        dummyStyle.font = dummyFont;
+        dummyStyle.width = 568 * 3.0;
+        dummyStyle.strokeThickness = 9.0;
+        dummyStyle.outline = true;
+        dummyStyle.shadow = true;
+        dummyStyle.shadowDepth = 10.5;
+        dummyStyle.wrap = true;
+        Lux::optimalFontSize(dummyLyric, dummyFont, 1700, 840, 130.0, 34.0, true);
+        Lux::measureTextBlock(dummyLyric, dummyStyle);
+
+        QImage dummySurface(1920, 1080, QImage::Format_ARGB32_Premultiplied);
+        dummySurface.fill(Qt::transparent);
+        QPainter p(&dummySurface);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setRenderHint(QPainter::TextAntialiasing);
+        Lux::drawTextBlock(&p, dummyLyric, dummyStyle, QPointF(100, 100));
+        p.end();
+    }
+
+    if (window.projection()) {
+        window.projection()->preWarm();
+    }
 
     if (splash)
         splash->setProgress(95, QStringLiteral("Cleaning temporary presentation cache files..."));

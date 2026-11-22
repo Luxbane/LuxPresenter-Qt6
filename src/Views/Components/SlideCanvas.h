@@ -56,6 +56,8 @@ private:
     AppSettings m_settings;
     mutable QString m_fsKey;      // memo of fullScaleFontSize (the search lays the text out 7 times)
     mutable qreal m_fsValue = 0;
+    mutable QPixmap m_cachedTextPixmap;
+    mutable QString m_cachedTextKey;
 };
 
 } // namespace Lux

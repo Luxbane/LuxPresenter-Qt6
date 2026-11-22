@@ -33,6 +33,7 @@ public:
 
     void initialize();                       // idempotent; asynchronous
     void retry();                            // resets and re-attempts initialization if unavailable
+    void shutdown();                         // closes controller, terminates msedgewebview2 processes, frees RAM
     void navigate(const QString& userInput); // URL or search text (see normalizeBrowserInput)
     void loadUrl(const QString& url);        // navigates to the URL exactly as given (no address-bar rules)
     void goHome();

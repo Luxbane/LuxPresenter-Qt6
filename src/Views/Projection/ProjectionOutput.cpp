@@ -4,6 +4,7 @@
 
 #include <QCoreApplication>
 #include <QGuiApplication>
+#include <QPainter>
 #include <QScreen>
 #include <QResizeEvent>
 
@@ -220,6 +221,17 @@ double ProjectionOutput::videoPosition() const
 double ProjectionOutput::videoDuration() const
 {
     return m_bg ? m_bg->decks()->duration() : 0;
+}
+
+void ProjectionOutput::preWarm()
+{
+    if (m_fg) {
+        QImage dummy(1920, 1080, QImage::Format_ARGB32_Premultiplied);
+        dummy.fill(Qt::black);
+        QPainter p(&dummy);
+        m_fg->paintScene(&p, QRectF(0, 0, 1920, 1080), 0);
+        p.end();
+    }
 }
 
 } // namespace Lux
