@@ -1,6 +1,6 @@
 ; LuxPresenter-Qt6 Inno Setup Script
 #define MyAppName "LuxPresenter"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Luxbane"
 #define MyAppURL "https://github.com/Luxbane/LuxPresenter"
 #define MyAppExeName "LuxPresenter.exe"

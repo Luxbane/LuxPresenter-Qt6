@@ -11,7 +11,7 @@
 #include <QVBoxLayout>
 
 #ifndef LUX_VERSION
-#define LUX_VERSION "1.0.0"
+#define LUX_VERSION "1.0.1"
 #endif
 
 namespace Lux {
