@@ -62,6 +62,12 @@ bool MpvApi::load(const QString& dllPath)
     command = reinterpret_cast<decltype(command)>(sym("mpv_command"));
     errorString = reinterpret_cast<decltype(errorString)>(sym("mpv_error_string"));
     clientApiVersion = reinterpret_cast<decltype(clientApiVersion)>(sym("mpv_client_api_version"));
+
+    renderContextCreate = reinterpret_cast<decltype(renderContextCreate)>(sym("mpv_render_context_create"));
+    renderContextFree = reinterpret_cast<decltype(renderContextFree)>(sym("mpv_render_context_free"));
+    renderContextRender = reinterpret_cast<decltype(renderContextRender)>(sym("mpv_render_context_render"));
+    renderContextSetUpdateCallback = reinterpret_cast<decltype(renderContextSetUpdateCallback)>(sym("mpv_render_context_set_update_callback"));
+    renderContextUpdate = reinterpret_cast<decltype(renderContextUpdate)>(sym("mpv_render_context_update"));
     if (!create || !initialize || !terminateDestroy || !setOptionString || !setPropertyString || !getPropertyString ||
         !getProperty || !freeMem || !command) {
         m_error = QStringLiteral("libmpv-2.dll is missing required exports");

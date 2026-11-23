@@ -107,6 +107,7 @@ public:
     QString viewboxVerticalAlignment() const { return m_viewVAlign; }
     double bgImageOpacity(int layer, qint64 t) const { return m_bgImgFade[layer].value(t); }
     QString bgImagePath(int layer) const { return m_bgImgPath[layer]; }
+    int activeBgLayer() const { return m_activeBgLayer; }
     // Colour behind everything ("transparent" while a video shows through from the video window).
     QString rootBackground() const { return m_rootBackground; }
     bool videoShowsThrough() const { return m_rootBackground.compare(QStringLiteral("transparent"), Qt::CaseInsensitive) == 0; }

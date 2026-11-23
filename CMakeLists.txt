@@ -11,7 +11,7 @@ if(NOT MSVC)
 endif()
 add_compile_options(/utf-8 /W4 /permissive-)
 
-find_package(Qt6 6.12 REQUIRED COMPONENTS Core Gui Widgets Svg Network Test)
+find_package(Qt6 6.12 REQUIRED COMPONENTS Core Gui Widgets Svg Network Test OpenGL OpenGLWidgets)
 qt_standard_project_setup()
 
 set(LUX_PORTABLE_DIR "${CMAKE_SOURCE_DIR}/Portable" CACHE PATH "Output directory for the portable test build")
@@ -51,7 +51,7 @@ add_library(luxcore STATIC
     src/Services/AlertService.cpp
     src/Services/Presentation/OfficeConverter.cpp
 )
-target_include_directories(luxcore PUBLIC src)
+target_include_directories(luxcore PUBLIC src "${CMAKE_SOURCE_DIR}/third_party/mpv-lgpl/include")
 target_link_libraries(luxcore PUBLIC Qt6::Core)
 target_compile_definitions(luxcore PUBLIC LUX_VERSION="${PROJECT_VERSION}")
 # Public-domain sample hymns (loaded only when the user asks for them).
@@ -99,7 +99,7 @@ add_library(luxui STATIC
     src/Views/Components/PageView.cpp
     src/Views/Components/WebView2Host.cpp
 )
-target_link_libraries(luxui PUBLIC luxcore Qt6::Widgets Qt6::Svg Qt6::Network user32 shcore)
+target_link_libraries(luxui PUBLIC luxcore Qt6::Widgets Qt6::Svg Qt6::Network Qt6::OpenGL Qt6::OpenGLWidgets user32 shcore opengl32)
 # Application manifest (Windows 10 support) for every executable that links the GUI library.
 target_sources(luxui INTERFACE "${CMAKE_SOURCE_DIR}/resources/app.manifest")
 qt_add_resources(luxui "luxui_resources"

@@ -186,6 +186,9 @@ void ProjectionOutput::update(const ProjectionState& state)
     if (!m_shown)
         return;
     m_composer.applyState(state);
+    const bool videoActive = m_composer.videoShowsThrough() || m_composer.inVideoMode();
+    if (m_fg)
+        m_fg->setLayered(videoActive);
     for (const VideoCommand& c : m_composer.takeVideoCommands())
         m_bg->decks()->execute(c);
     if (m_composer.inVideoMode()) {
@@ -201,6 +204,9 @@ void ProjectionOutput::tick()
 {
     const qint64 t = m_composer.now();
     m_composer.advance(t);
+    const bool videoActive = m_composer.videoShowsThrough() || m_composer.inVideoMode();
+    if (m_fg)
+        m_fg->setLayered(videoActive);
     for (const VideoCommand& c : m_composer.takeVideoCommands())
         m_bg->decks()->execute(c);
     m_fg->update();

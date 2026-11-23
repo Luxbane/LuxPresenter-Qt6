@@ -12,10 +12,9 @@
 
 namespace Lux {
 
-// The projector's foreground window (ProjectionWindow.xaml): a frameless, translucent, non-activating window
-// that paints the 1920x1080 scene (background images, slide text layers, black and logo overlays) described
-// by a ProjectionComposer, scaled Uniform to the window. Where a video should show through, the window is
-// transparent over ProjectionBackgroundWindow.
+// The projector's single unified canvas window: an opaque, frameless, non-activating window
+// that paints the 1920x1080 scene (backgrounds, slide text layers, black and logo overlays)
+// directly to hardware in a single canvas.
 class ProjectionWindow : public QWidget
 {
     Q_OBJECT
@@ -35,6 +34,9 @@ public:
     void preloadImage(const QString& path);
     // Presentation page image for an output of `deviceBox` pixels (cached per page and size). Null when unavailable.
     QImage presentationImage(const QSize& deviceBox);
+    // Dynamically switches between Opaque Direct-Flip mode (image/slide/color) and Layered transparent mode (video).
+    void setLayered(bool layered);
+    bool isLayered() const { return m_isLayered; }
     // Test hooks
     int cacheRenderCount() const { return m_cacheRenders; }
     void setLayerCacheEnabled(bool on) { m_cacheEnabled = on; }
@@ -75,6 +77,7 @@ private:
     qreal m_fontSize[2] = {0, 0};
     QTimer m_alertAnimTimer;
     qint64 m_alertPassStartTime = 0;
+    bool m_isLayered = false;
 };
 
 } // namespace Lux

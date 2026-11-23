@@ -15,6 +15,13 @@
 #include <algorithm>
 #include <cmath>
 
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 namespace Lux {
 
 namespace {
@@ -64,9 +71,9 @@ QRectF textArea(const SlideLayerData& d, double left, double top, double bottom,
 ProjectionWindow::ProjectionWindow(const ProjectionComposer* composer, QWidget* parent)
     : QWidget(parent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowDoesNotAcceptFocus), m_composer(composer)
 {
-    setAttribute(Qt::WA_TranslucentBackground);
     setAttribute(Qt::WA_ShowWithoutActivating);
-    setAttribute(Qt::WA_NoSystemBackground);
+    setAttribute(Qt::WA_NativeWindow);
+    setAttribute(Qt::WA_OpaquePaintEvent);
     setFocusPolicy(Qt::NoFocus);
     setWindowTitle(QStringLiteral("LuxPresenter Projection"));
 
@@ -83,6 +90,26 @@ ProjectionWindow::ProjectionWindow(const ProjectionComposer* composer, QWidget* 
         update();
     });
     connect(&m_alertAnimTimer, &QTimer::timeout, this, QOverload<>::of(&QWidget::update));
+}
+
+void ProjectionWindow::setLayered(bool layered)
+{
+    if (m_isLayered == layered)
+        return;
+    m_isLayered = layered;
+#ifdef Q_OS_WIN
+    HWND h = reinterpret_cast<HWND>(winId());
+    if (h) {
+        LONG_PTR ex = GetWindowLongPtrW(h, GWL_EXSTYLE);
+        if (layered)
+            ex |= WS_EX_LAYERED;
+        else
+            ex &= ~WS_EX_LAYERED;
+        SetWindowLongPtrW(h, GWL_EXSTYLE, ex);
+        SetWindowPos(h, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+    }
+#endif
+    update();
 }
 
 void ProjectionWindow::preloadImage(const QString& path)
@@ -305,7 +332,14 @@ void ProjectionWindow::paintScene(QPainter* p, const QRectF& target, qint64 t)
         p->fillRect(fill, QColor(m_composer->rootBackground()));
     }
 
-    for (int i = 0; i < 2; ++i) {
+    // Dual-layer smooth crossfade:
+    // Outgoing layer must be rendered FIRST as base, Incoming layer rendered SECOND on top.
+    const int active = m_composer->activeBgLayer();
+    const int out = 1 - active;
+    const int order[2] = {out, active};
+
+    for (int idx = 0; idx < 2; ++idx) {
+        const int i = order[idx];
         const QString path = m_composer->bgImagePath(i);
         const double o = m_composer->bgImageOpacity(i, t);
         if (path.isEmpty() || o <= 0.001)
@@ -313,7 +347,15 @@ void ProjectionWindow::paintScene(QPainter* p, const QRectF& target, qint64 t)
         const QPixmap pm = image(path);
         if (pm.isNull())
             continue;
-        p->setOpacity(o);
+
+        double drawOpacity = o;
+        // When crossfading between two background images, keep the outgoing image opaque underneath
+        // so the root background colour (#001833) does not bleed through or flash during the transition.
+        if (i == out && !m_composer->bgImagePath(active).isEmpty() && m_composer->bgImageOpacity(active, t) > 0.001) {
+            drawOpacity = 1.0;
+        }
+
+        p->setOpacity(drawOpacity);
         // Background image scales to fit the monitor without cropping (Stretch to fill target)
         p->drawPixmap(fill, pm, pm.rect());
     }
@@ -350,12 +392,12 @@ void ProjectionWindow::paintScene(QPainter* p, const QRectF& target, qint64 t)
     p->setOpacity(1.0);
     const double b = m_composer->blackOpacity(t);
     if (b > 0.001) {
-        p->setOpacity(b);
+        p->setOpacity(b >= 0.95 ? 1.0 : b);
         p->fillRect(fill, Qt::black);
     }
     const double l = m_composer->logoOpacity(t);
     if (l > 0.001) {
-        p->setOpacity(l);
+        p->setOpacity(l >= 0.95 ? 1.0 : l);
         p->fillRect(fill, QColor(0x00, 0x18, 0x33));
         p->save();
         p->translate(box.topLeft());

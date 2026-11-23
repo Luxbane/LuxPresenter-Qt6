@@ -11,6 +11,7 @@ call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build
 set CMAKE=C:\Users\sandl\mingw64\bin\cmake.exe
 set NINJA=C:\Users\sandl\mingw64\bin\ninja.exe
 set QT=C:/Qt/6.12.0/msvc2022_64
+set "PATH=%QT%\bin;%PATH%"
 
 "%CMAKE%" -S "%~dp0." -B "%~dp0build" -G Ninja -DCMAKE_MAKE_PROGRAM="%NINJA%" ^
   -DCMAKE_BUILD_TYPE=%CONFIG% -DCMAKE_PREFIX_PATH=%QT% -DCMAKE_CXX_COMPILER=cl || exit /b 1
