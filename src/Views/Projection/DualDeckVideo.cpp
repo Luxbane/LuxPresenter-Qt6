@@ -105,6 +105,7 @@ bool DualDeckVideo::startOn(const VideoCommand& cmd, MpvPlayer::Role role)
     const bool ok = m_player[deck].load(cmd.path, role, loop, !cmd.playing, m_volume);
     if (!ok)
         m_error = m_player[deck].lastError();
+    m_fade.restartClock(m_clock.elapsed());
     const int out = m_fade.tick(m_clock.elapsed()); // immediate cuts report their outgoing deck right away
     if (out >= 0)
         stopDeck(out);

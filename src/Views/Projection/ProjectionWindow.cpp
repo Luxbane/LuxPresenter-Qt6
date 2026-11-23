@@ -71,9 +71,9 @@ QRectF textArea(const SlideLayerData& d, double left, double top, double bottom,
 ProjectionWindow::ProjectionWindow(const ProjectionComposer* composer, QWidget* parent)
     : QWidget(parent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowDoesNotAcceptFocus), m_composer(composer)
 {
+    setAttribute(Qt::WA_TranslucentBackground);
     setAttribute(Qt::WA_ShowWithoutActivating);
-    setAttribute(Qt::WA_NativeWindow);
-    setAttribute(Qt::WA_OpaquePaintEvent);
+    setAttribute(Qt::WA_NoSystemBackground);
     setFocusPolicy(Qt::NoFocus);
     setWindowTitle(QStringLiteral("LuxPresenter Projection"));
 
@@ -90,26 +90,6 @@ ProjectionWindow::ProjectionWindow(const ProjectionComposer* composer, QWidget* 
         update();
     });
     connect(&m_alertAnimTimer, &QTimer::timeout, this, QOverload<>::of(&QWidget::update));
-}
-
-void ProjectionWindow::setLayered(bool layered)
-{
-    if (m_isLayered == layered)
-        return;
-    m_isLayered = layered;
-#ifdef Q_OS_WIN
-    HWND h = reinterpret_cast<HWND>(winId());
-    if (h) {
-        LONG_PTR ex = GetWindowLongPtrW(h, GWL_EXSTYLE);
-        if (layered)
-            ex |= WS_EX_LAYERED;
-        else
-            ex &= ~WS_EX_LAYERED;
-        SetWindowLongPtrW(h, GWL_EXSTYLE, ex);
-        SetWindowPos(h, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-    }
-#endif
-    update();
 }
 
 void ProjectionWindow::preloadImage(const QString& path)

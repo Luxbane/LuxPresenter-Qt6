@@ -14,6 +14,8 @@ public:
     int begin(int crossfadeMs, qint64 now);
     // Advance the fade. Returns the deck that has just finished fading out (stop it), or -1.
     int tick(qint64 now);
+    // Restart crossfade clock so file load time does not truncate the transition.
+    void restartClock(qint64 now) { m_start = now; }
     // Both decks transparent, nothing active.
     void stopAll();
 

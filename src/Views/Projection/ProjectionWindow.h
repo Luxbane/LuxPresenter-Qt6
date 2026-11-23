@@ -34,9 +34,6 @@ public:
     void preloadImage(const QString& path);
     // Presentation page image for an output of `deviceBox` pixels (cached per page and size). Null when unavailable.
     QImage presentationImage(const QSize& deviceBox);
-    // Dynamically switches between Opaque Direct-Flip mode (image/slide/color) and Layered transparent mode (video).
-    void setLayered(bool layered);
-    bool isLayered() const { return m_isLayered; }
     // Test hooks
     int cacheRenderCount() const { return m_cacheRenders; }
     void setLayerCacheEnabled(bool on) { m_cacheEnabled = on; }
@@ -77,7 +74,6 @@ private:
     qreal m_fontSize[2] = {0, 0};
     QTimer m_alertAnimTimer;
     qint64 m_alertPassStartTime = 0;
-    bool m_isLayered = false;
 };
 
 } // namespace Lux
