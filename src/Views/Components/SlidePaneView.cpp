@@ -37,7 +37,7 @@ QString formatTime(double seconds)
 
 enum Role { LabelRole = Qt::UserRole, ContentRole, TypeRole, GapRole };
 
-constexpr int kBlankLineHeight = 17;   // one blank line of the lyrics = one text line of the list (LineHeight 17)
+constexpr int kBlankLineHeight = 2;   // tight spacing between slides ("mepet")
 
 // Blank lines before a stanza, shown as empty (unselectable) space above its row.
 int gapPixels(const QModelIndex& idx) { return qMax(0, idx.data(GapRole).toInt()) * kBlankLineHeight; }
@@ -52,7 +52,7 @@ QColor bannerColor(SlideType t)
 }
 
 // Stanza row: coloured label banner (Verse blue / Chorus maroon / Bridge green) and the
-// stanza text, with a full-row selection highlight.
+// stanza text, with full-row selection highlight and hover highlight.
 class StanzaDelegate : public QStyledItemDelegate
 {
 public:
@@ -63,12 +63,12 @@ public:
         const int w = opt.rect.width() > 0 ? opt.rect.width() : 300;
         int h = gapPixels(idx);
         if (!idx.data(LabelRole).toString().isEmpty())
-            h += QFontMetrics(tahoma(11, true)).height() + 4 + 6; // padding 2+2, margin 4+2
+            h += QFontMetrics(tahoma(11, true)).height() + 4 + 4; // banner height + spacing
         const QFontMetrics fm(tahoma(11));
         const QString text = Lux::displayText(idx.data(ContentRole).toString());
-        const QRect br = fm.boundingRect(QRect(0, 0, w - 12, 10000), Qt::TextWordWrap, text);
+        const QRect br = fm.boundingRect(QRect(0, 0, w - 16, 10000), Qt::TextWordWrap, text);
         const int lines = qMax(1, br.height() / qMax(1, fm.lineSpacing()));
-        h += lines * 17 + 4; // LineHeight 17, margin 2+2
+        h += lines * 22 + 4; // LineHeight 22, vertical padding gives ~26px comfortable row
         return {w, h};
     }
 
@@ -76,40 +76,54 @@ public:
     {
         const Theme& t = ThemeService::instance().theme();
         const bool selected = opt.state & QStyle::State_Selected;
+        const bool hovered = (opt.state & QStyle::State_MouseOver);
         const bool active = opt.widget && opt.widget->property("paneActive").toBool();
         p->save();
-        QColor textColor = t.listItemText;
+
         const int gap = gapPixels(idx);
-        const QRect rowRect = opt.rect.adjusted(0, gap, 0, 0);   // the gap above the stanza is never highlighted
-        if (selected) {
-            p->fillRect(rowRect, active ? Theme::selectionBlue() : QColor(0xCB, 0xD5, 0xE1));
-            textColor = active ? QColor(Qt::white) : QColor(0x0F, 0x17, 0x2A);
-        }
-        int y = rowRect.top();
+        int y = opt.rect.top() + gap;
+
+        // 1. Draw Stanza Banner if present (e.g. "Verse 2", "Chorus", etc.)
         const QString label = Lux::displayText(idx.data(LabelRole).toString());
         if (!label.isEmpty()) {
             const QFont f = tahoma(11, true);
             const int bh = QFontMetrics(f).height() + 4;
-            const QRect banner(rowRect.left(), y + 4, rowRect.width(), bh);
+            const QRect banner(opt.rect.left(), y + 1, opt.rect.width(), bh);
             p->fillRect(banner, bannerColor(static_cast<SlideType>(idx.data(TypeRole).toInt())));
             p->setFont(f);
             p->setPen(Qt::white);
-            p->drawText(banner.adjusted(6, 0, -6, 0), Qt::AlignVCenter | Qt::AlignLeft, label);
-            y += bh + 6;
+            p->drawText(banner.adjusted(8, 0, -8, 0), Qt::AlignVCenter | Qt::AlignLeft, label);
+            y += bh + 3;
         }
+
+        // 2. Lyric selection / hover box rectangle (leaves only 2px gap between adjacent items)
+        const QRect lyricBox(opt.rect.left(), y + 1, opt.rect.width(), opt.rect.bottom() - y - 1);
+
+        QColor textColor = t.listItemText;
+        if (selected) {
+            p->fillRect(lyricBox, active ? Theme::selectionBlue() : QColor(0x1E, 0x60, 0xD2));
+            textColor = Qt::white;
+        } else if (hovered) {
+            // Gray selected hover box matching Image 2
+            p->fillRect(lyricBox, QColor(255, 255, 255, 22)); // subtle translucent gray fill
+            p->setPen(QColor(255, 255, 255, 55));            // subtle 1px border
+            p->drawRect(lyricBox.adjusted(0, 0, -1, -1));
+        }
+
+        // 3. Draw Lyric Text vertically centered in the lyric box
         p->setFont(tahoma(11));
         p->setPen(textColor);
         const QFontMetrics fm(p->font());
         const QString text = Lux::displayText(idx.data(ContentRole).toString());
-        const QRect area(opt.rect.left() + 6, y + 2, opt.rect.width() - 12, opt.rect.bottom() - y - 2);
-        // Fixed 17px line height like the reference.
-        int ly = area.top();
+        const QRect textArea = lyricBox.adjusted(8, 2, -8, -2);
+
+        int ly = textArea.top();
         for (const QString& para : text.split(QLatin1Char('\n'))) {
             QStringList wrapped;
             QString cur;
             for (const QString& word : para.split(QLatin1Char(' '))) {
                 const QString trial = cur.isEmpty() ? word : cur + QLatin1Char(' ') + word;
-                if (fm.horizontalAdvance(trial) > area.width() && !cur.isEmpty()) {
+                if (fm.horizontalAdvance(trial) > textArea.width() && !cur.isEmpty()) {
                     wrapped << cur;
                     cur = word;
                 } else {
@@ -118,8 +132,8 @@ public:
             }
             wrapped << cur;
             for (const QString& l : std::as_const(wrapped)) {
-                p->drawText(QRect(area.left(), ly, area.width(), 17), Qt::AlignVCenter | Qt::AlignLeft, l);
-                ly += 17;
+                p->drawText(QRect(textArea.left(), ly, textArea.width(), 20), Qt::AlignVCenter | Qt::AlignLeft, l);
+                ly += 20;
             }
         }
         p->restore();
@@ -301,6 +315,9 @@ QWidget* SlidePaneView::buildSlidePage()
     m_stanzas->setFrameShape(QFrame::NoFrame);
     m_stanzas->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_stanzas->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_stanzas->setMouseTracking(true);
+    m_stanzas->viewport()->setAttribute(Qt::WA_Hover, true);
+    m_stanzas->viewport()->setMouseTracking(true);
     m_stanzas->setItemDelegate(new StanzaDelegate(m_stanzas));
     m_stanzas->setMinimumHeight(140);
     new ActiveSelectionTracker(m_stanzas);

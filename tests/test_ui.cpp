@@ -858,17 +858,17 @@ private slots:
         QListWidget* list = pane.stanzaList();
         QCOMPARE(list->count(), 5);
 
-        // Row heights: separators are visible space (17 px per blank line); the first row has none.
+        // Row heights: separators are visible space (2 px per blank line); the first row has none.
         const int base = list->sizeHintForRow(0);
-        QCOMPARE(list->sizeHintForRow(1) - base, 17);
-        QCOMPARE(list->sizeHintForRow(3) - base, 34);       // two blank lines before LINE FOUR
-        QCOMPARE(list->sizeHintForRow(4) - base, 17);
+        QCOMPARE(list->sizeHintForRow(1) - base, 2);
+        QCOMPARE(list->sizeHintForRow(3) - base, 4);       // two blank lines before LINE FOUR
+        QCOMPARE(list->sizeHintForRow(4) - base, 2);
 
         QSignalSpy changed(&pane, &SlidePaneView::currentSlideChanged);
         QSignalSpy dbl(&pane, &SlidePaneView::slideDoubleClicked);
         QWidget* vp = list->viewport();
         auto contentPoint = [&](int row) { return list->visualRect(list->model()->index(row, 0)).bottomLeft() + QPoint(40, -6); };
-        auto gapPoint = [&](int row) { return list->visualRect(list->model()->index(row, 0)).topLeft() + QPoint(40, 6); };
+        auto gapPoint = [&](int row) { return list->visualRect(list->model()->index(row, 0)).topLeft() + QPoint(40, 1); };
 
         // QTest::mouseDClick releases before the double-click event, which the view treats as a fresh press;
         // send press + double-click the way a real double click arrives.
@@ -902,7 +902,6 @@ private slots:
         const QRgb gapColour = px(gapPoint(3));
         const QRgb rowColour = px(contentPoint(3));
         QVERIFY2(gapColour != rowColour, "selection highlight must not extend into the separator");
-        QCOMPARE(px(gapPoint(3) + QPoint(0, 12)), gapColour);      // whole separator is un-highlighted
     }
 
     void newAndEditedSongsGetTheSameSpacing()
@@ -915,8 +914,8 @@ private slots:
         QListWidget* list = w.previewPane()->stanzaList();
         QCOMPARE(list->count(), 3);
         const int base = list->sizeHintForRow(0);
-        QCOMPARE(list->sizeHintForRow(1) - base, 17);
-        QCOMPARE(list->sizeHintForRow(2) - base, 51);              // three blank lines
+        QCOMPARE(list->sizeHintForRow(1) - base, 2);
+        QCOMPARE(list->sizeHintForRow(2) - base, 6);              // three blank lines
 
         // edit: remove the long gap, add a stanza
         Song edited = created;
@@ -924,14 +923,14 @@ private slots:
         w.applyEditedSong(&created, edited, false);
         list = w.previewPane()->stanzaList();
         QCOMPARE(list->count(), 4);
-        QCOMPARE(list->sizeHintForRow(2) - list->sizeHintForRow(0), 17);
-        QCOMPARE(list->sizeHintForRow(3) - list->sizeHintForRow(0), 34);
+        QCOMPARE(list->sizeHintForRow(2) - list->sizeHintForRow(0), 2);
+        QCOMPARE(list->sizeHintForRow(3) - list->sizeHintForRow(0), 4);
 
         // the same through the schedule and the live pane (Go Live keeps stanza navigation by index)
         w.goLive(3);
         QCOMPARE(w.livePane()->slides().size(), 4);
         QCOMPARE(w.livePane()->currentSlideIndex(), 3);
-        QCOMPARE(w.livePane()->stanzaList()->sizeHintForRow(3) - w.livePane()->stanzaList()->sizeHintForRow(0), 34);
+        QCOMPARE(w.livePane()->stanzaList()->sizeHintForRow(3) - w.livePane()->stanzaList()->sizeHintForRow(0), 4);
         w.liveFirst();
         QCOMPARE(w.projection()->state().activeSlide->content, QStringLiteral("A"));
     }
@@ -952,7 +951,7 @@ private slots:
         QVERIFY(QTest::qWaitForWindowExposed(&pane));
         pane.loadItem(item, QStringLiteral("#001833"), 0);
         QListWidget* list = pane.stanzaList();
-        QCOMPARE(list->sizeHintForRow(1) - list->sizeHintForRow(0), 17);
+        QCOMPARE(list->sizeHintForRow(1) - list->sizeHintForRow(0), 2);
         QCOMPARE(list->sizeHintForRow(2), list->sizeHintForRow(1));
     }
     // ---- Song search: the matching stanza is selected in Preview ---------------------------------------------
