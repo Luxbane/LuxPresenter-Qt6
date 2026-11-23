@@ -25,6 +25,7 @@ DualDeckVideo::DualDeckVideo(QWidget* host) : QObject(host), m_host(host)
     }
     m_clock.start();
     m_timer.setInterval(16);
+    m_timer.setTimerType(Qt::PreciseTimer);
     connect(&m_timer, &QTimer::timeout, this, &DualDeckVideo::onTick);
 }
 
@@ -105,14 +106,21 @@ bool DualDeckVideo::startOn(const VideoCommand& cmd, MpvPlayer::Role role)
     const bool ok = m_player[deck].load(cmd.path, role, loop, !cmd.playing, m_volume);
     if (!ok)
         m_error = m_player[deck].lastError();
-    m_fade.restartClock(m_clock.elapsed());
-    const int out = m_fade.tick(m_clock.elapsed()); // immediate cuts report their outgoing deck right away
-    if (out >= 0)
-        stopDeck(out);
+
+    if (m_fade.fading() && cmd.crossfadeMs > 0) {
+        // Crossfading from an existing deck: hold incoming at alpha 0 until frame 1 is decoded & displayed
+        m_cuedDeck = deck;
+        m_cueStartTime = m_clock.elapsed();
+        m_fade.restartClock(m_cueStartTime);
+        m_timer.start();
+    } else {
+        m_cuedDeck = -1;
+        const int out = m_fade.tick(m_clock.elapsed()); // immediate cuts report their outgoing deck right away
+        if (out >= 0)
+            stopDeck(out);
+    }
     for (int d = 0; d < 2; ++d)
         applyAlpha(d);
-    if (m_fade.fading())
-        m_timer.start();
     return ok;
 }
 
@@ -125,6 +133,7 @@ bool DualDeckVideo::execute(const VideoCommand& cmd)
         return startOn(cmd, MpvPlayer::Role::Media);
     case VideoCommand::Kind::Stop:
         m_timer.stop();
+        m_cuedDeck = -1;
         for (int d = 0; d < 2; ++d)
             if (m_player[d].isValid())
                 m_player[d].stop();
@@ -145,12 +154,27 @@ bool DualDeckVideo::execute(const VideoCommand& cmd)
 
 void DualDeckVideo::onTick()
 {
+    const qint64 now = m_clock.elapsed();
+    if (m_cuedDeck >= 0) {
+        const bool ready = m_player[m_cuedDeck].isFirstFrameReady();
+        const bool timedOut = (now - m_cueStartTime) >= 1500;
+        if (ready || timedOut) {
+            // First frame is rendered on the target deck (or timeout reached)!
+            // Begin the smooth visible crossfade clock now.
+            m_cuedDeck = -1;
+            m_fade.restartClock(now);
+        } else {
+            // Still loading/decoding the first frame: hold the clock so alpha stays 0
+            m_fade.restartClock(now);
+        }
+    }
+
     const int out = m_fade.tick(m_clock.elapsed());
     for (int d = 0; d < 2; ++d)
         applyAlpha(d);
     if (out >= 0)
         stopDeck(out);
-    if (!m_fade.fading())
+    if (!m_fade.fading() && m_cuedDeck < 0)
         m_timer.stop();
 }
 

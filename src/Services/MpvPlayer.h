@@ -34,6 +34,7 @@ public:
     double position() const;      // seconds
     bool atEnd() const;           // eof-reached
     bool hasVideo() const;        // a video track has been decoded (video-params available)
+    bool isFirstFrameReady() const; // first video frame is decoded and ready on the HWND
     QString property(const char* name) const;
     QString lastError() const { return m_error; }
 

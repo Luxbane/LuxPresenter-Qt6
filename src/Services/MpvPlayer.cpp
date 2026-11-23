@@ -44,6 +44,14 @@ bool MpvPlayer::init(quintptr wid)
         if (attempt == 0)
             setOption("gpu-context", "d3d11"); // second attempt lets mpv choose
         setOption("hwdec", "auto-safe");
+        // Ultra-low GPU and CPU overhead settings for potato laptop iGPUs (e.g. Intel HD 5500)
+        setOption("profile", "fast");
+        setOption("scale", "bilinear");
+        setOption("cscale", "bilinear");
+        setOption("dscale", "bilinear");
+        setOption("d3d11-flip", "no");
+        setOption("d3d11-exclusive-fs", "no");
+        setOption("vd-lavc-threads", "2");
         setOption("keep-open", "yes");
         setOption("idle", "yes");
         setOption("force-window", "yes");
@@ -79,12 +87,14 @@ bool MpvPlayer::load(const QString& path, Role role, bool loop, bool startPaused
         return false;
     if (role == Role::Background) {
         setProp("mute", "yes");
+        setProp("aid", "no"); // disables audio decoding completely, saving CPU on dual-core laptops
         // Background video scales to monitor without letterboxing or cropping
         setProp("keepaspect", "no");
         setProp("panscan", "0.0");
         setProp("loop-file", "inf");
     } else {
         setProp("mute", "no");
+        setProp("aid", "auto");
         // Standalone media video keeps its file aspect ratio with letterboxing
         setProp("keepaspect", "yes");
         setProp("panscan", "0.0");
@@ -169,6 +179,25 @@ bool MpvPlayer::atEnd() const
 bool MpvPlayer::hasVideo() const
 {
     return !property("video-params/w").isEmpty();
+}
+
+bool MpvPlayer::isFirstFrameReady() const
+{
+    if (!m_handle)
+        return false;
+    MpvApi& api = MpvApi::instance();
+    // 1. Check if at least one video frame has physically been decoded and displayed
+    int64_t frames = 0;
+    if (api.getProperty && api.getProperty(m_handle, "video-frame-count", 4 /* MPV_FORMAT_INT64 */, &frames) >= 0) {
+        if (frames >= 1)
+            return true;
+    }
+    // 2. Check if playback position is available and >= 0
+    double pos = 0;
+    if (api.getProperty && api.getProperty(m_handle, "time-pos", MpvApi::kFormatDouble, &pos) >= 0) {
+        return true;
+    }
+    return false;
 }
 
 QString MpvPlayer::property(const char* name) const

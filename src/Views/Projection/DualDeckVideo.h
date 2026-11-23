@@ -62,6 +62,8 @@ private:
     double m_volume = 1.0;
     QString m_error;
     int m_lastAlpha[2] = {-1, -1};
+    int m_cuedDeck = -1;
+    qint64 m_cueStartTime = 0;
 };
 
 } // namespace Lux
