@@ -271,6 +271,8 @@ void ProjectionComposer::applyBackground(const QString& bg, const QString& trans
             const int next = 1 - m_activeBgLayer;
             const int out = m_activeBgLayer;
             m_bgImgPath[next] = bg;
+            if (m_prepareBackground)
+                m_prepareBackground(bg);
             const bool useBlend = isBlend(transition) && !m_first;
             if (useBlend && durationMs > 0) {
                 m_bgImgFade[next].run(0.0, 1.0, durationMs, t);

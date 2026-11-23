@@ -89,6 +89,8 @@ public:
     void setLayerPreparer(std::function<void(int)> fn) { m_prepare = std::move(fn); }
     // Same for the presentation page (called when the shown page changes).
     void setPresentationPreparer(std::function<void()> fn) { m_preparePresentation = std::move(fn); }
+    // Same for background images: preloads and decodes the image ahead of starting the fade.
+    void setBackgroundPreparer(std::function<void(const QString&)> fn) { m_prepareBackground = std::move(fn); }
 
     // ---- scene description (valid at time `t`) ----
     struct Margins { double left = 100, top = 20, right = 100, bottom = 70; };
@@ -136,6 +138,7 @@ private:
     std::function<qint64()> m_clock;
     std::function<void(int)> m_prepare;
     std::function<void()> m_preparePresentation;
+    std::function<void(const QString&)> m_prepareBackground;
     bool m_presActive = false;
     QString m_presPdf;
     int m_presPage = -1;

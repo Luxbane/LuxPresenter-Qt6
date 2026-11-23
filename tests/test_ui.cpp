@@ -1725,6 +1725,7 @@ private slots:
     {
         // Tests semantic version comparison rules
         QVERIFY(UpdateService::isVersionNewer(QStringLiteral("v1.1.2"), QStringLiteral("1.0.0")));
+        QVERIFY(UpdateService::isVersionNewer(QStringLiteral("v1.0.2"), QStringLiteral("1.0.1")));
         QVERIFY(UpdateService::isVersionNewer(QStringLiteral("v1.0.1"), QStringLiteral("1.0.0")));
         QVERIFY(UpdateService::isVersionNewer(QStringLiteral("2.0.0"), QStringLiteral("1.9.9")));
         QVERIFY(!UpdateService::isVersionNewer(QStringLiteral("v1.0.0"), QStringLiteral("1.0.0")));

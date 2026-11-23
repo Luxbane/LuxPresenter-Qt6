@@ -6,6 +6,7 @@
 
 #include <QColor>
 #include <QDateTime>
+#include <QFile>
 #include <QFontMetricsF>
 #include <QMouseEvent>
 #include <QPainter>
@@ -82,6 +83,17 @@ ProjectionWindow::ProjectionWindow(const ProjectionComposer* composer, QWidget* 
         update();
     });
     connect(&m_alertAnimTimer, &QTimer::timeout, this, QOverload<>::of(&QWidget::update));
+}
+
+void ProjectionWindow::preloadImage(const QString& path)
+{
+    if (path.isEmpty() || path.startsWith(QLatin1Char('#')))
+        return;
+    if (!m_images.contains(path) && QFile::exists(path)) {
+        const QPixmap pm(path);
+        if (!pm.isNull())
+            m_images.insert(path, pm);
+    }
 }
 
 QPixmap ProjectionWindow::image(const QString& path)

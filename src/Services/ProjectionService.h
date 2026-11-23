@@ -28,6 +28,7 @@ public:
     virtual double videoPosition() const { return 0; }
     virtual double videoDuration() const { return 0; }
     virtual void preWarm() {}
+    virtual void preloadBackground(const QString& /*bg*/) {}
 };
 
 // Port of ProjectionService: owns the projection state and keeps the output in sync with it.
@@ -58,6 +59,7 @@ public:
     void hideWindow();
     bool isWindowShown() const;
     void preWarm();
+    void preloadBackground(const QString& bg);
     // Monitors were added/removed: re-choose the target monitor for a visible output.
     void refreshOutput() { if (isWindowShown()) showWindow(); }
 

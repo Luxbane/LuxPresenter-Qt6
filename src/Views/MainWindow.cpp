@@ -561,6 +561,8 @@ void MainWindow::setActiveBackground(const QString& background, bool updateLive)
     s.lastUsedBackground = bg;
     m_data.saveSettings(s);
     m_preview->canvas()->setBackground(bg);
+    if (m_projection)
+        m_projection->preloadBackground(bg);
     if (updateLive) {
         m_liveBackground = bg;
         m_live->canvas()->setBackground(bg);
@@ -574,6 +576,8 @@ void MainWindow::setActiveBackground(const QString& background, bool updateLive)
 void MainWindow::showInPreview(const PresentationItem& item, const QString& background, int slideIndex)
 {
     m_preview->loadItem(item, background, slideIndex);
+    if (m_projection)
+        m_projection->preloadBackground(background);
 }
 
 void MainWindow::onSongSelectedForPreview(const QString& songId)
@@ -1476,7 +1480,8 @@ void MainWindow::goLive(int slideIndex)
         setStatusText(QStringLiteral("Live Background: %1").arg(
             m_liveBackground.startsWith(QLatin1Char('#')) ? m_liveBackground : QFileInfo(m_liveBackground).fileName()));
     }
-    m_projection->showWindow();
+    if (m_liveButton->isChecked() && !m_projection->isWindowShown())
+        m_projection->showWindow();
     updateDisplayStatus();
     updateStageDisplay();
 }

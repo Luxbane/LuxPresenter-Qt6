@@ -69,6 +69,7 @@ void ProjectionOutput::ensureWindows()
     m_fg = new ProjectionWindow(&m_composer);
     m_composer.setPresentationPreparer([this] { if (m_fg) m_fg->preparePresentation(); });
     m_composer.setLayerPreparer([this](int layer) { if (m_fg) m_fg->prepareLayer(layer); });
+    m_composer.setBackgroundPreparer([this](const QString& path) { if (m_fg) m_fg->preloadImage(path); });
     connect(m_fg, &ProjectionWindow::clicked, this, [this] { if (m_activateMain) m_activateMain(); });
     // Native handles + styles before the first show.
     DisplayHelper::makeNonActivating(m_bg->winId());
@@ -225,6 +226,7 @@ double ProjectionOutput::videoDuration() const
 
 void ProjectionOutput::preWarm()
 {
+    ensureWindows();
     if (m_fg) {
         QImage dummy(1920, 1080, QImage::Format_ARGB32_Premultiplied);
         dummy.fill(Qt::black);
@@ -232,6 +234,16 @@ void ProjectionOutput::preWarm()
         m_fg->paintScene(&p, QRectF(0, 0, 1920, 1080), 0);
         p.end();
     }
+    if (m_bg && m_bg->decks()) {
+        m_bg->decks()->preWarm();
+    }
+}
+
+void ProjectionOutput::preloadBackground(const QString& bg)
+{
+    ensureWindows();
+    if (m_fg)
+        m_fg->preloadImage(bg);
 }
 
 } // namespace Lux

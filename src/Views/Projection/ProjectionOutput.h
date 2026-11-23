@@ -49,6 +49,7 @@ public:
     double videoPosition() const override;
     double videoDuration() const override;
     void preWarm() override;
+    void preloadBackground(const QString& bg) override;
 
     // Re-reads the current monitor description (resolution/scaling/position) and re-fits the windows.
     void refreshPlacement() { reassertPlacement(); }

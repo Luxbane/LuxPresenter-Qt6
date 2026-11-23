@@ -31,6 +31,8 @@ public:
     void prepareLayer(int layer);
     // Renders the presentation page for the current output size ahead of the first paint (see ProjectionComposer).
     void preparePresentation();
+    // Preloads and decodes an image background into memory ahead of transitions, preventing frame drops.
+    void preloadImage(const QString& path);
     // Presentation page image for an output of `deviceBox` pixels (cached per page and size). Null when unavailable.
     QImage presentationImage(const QSize& deviceBox);
     // Test hooks

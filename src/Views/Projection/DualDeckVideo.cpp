@@ -41,6 +41,21 @@ void DualDeckVideo::resizeToHost()
         w->setGeometry(m_host->rect());
 }
 
+void DualDeckVideo::preWarm()
+{
+    MpvApi& api = MpvApi::instance();
+    if (!api.isAvailable() && !api.load())
+        return;
+    resizeToHost();
+    for (int d = 0; d < 2; ++d) {
+        if (!m_ready[d] && m_deck[d]) {
+            m_ready[d] = m_player[d].init(quintptr(m_deck[d]->winId()));
+            if (m_ready[d])
+                applyAlpha(d);
+        }
+    }
+}
+
 int DualDeckVideo::appliedAlpha(int deck) const
 {
     BYTE a = 0;
@@ -53,7 +68,11 @@ int DualDeckVideo::appliedAlpha(int deck) const
 
 void DualDeckVideo::applyAlpha(int deck)
 {
-    SetLayeredWindowAttributes(reinterpret_cast<HWND>(m_deck[deck]->winId()), 0, BYTE(m_fade.alpha(deck)), LWA_ALPHA);
+    const int a = m_fade.alpha(deck);
+    if (a == m_lastAlpha[deck])
+        return;
+    m_lastAlpha[deck] = a;
+    SetLayeredWindowAttributes(reinterpret_cast<HWND>(m_deck[deck]->winId()), 0, BYTE(a), LWA_ALPHA);
 }
 
 void DualDeckVideo::stopDeck(int deck)
@@ -109,6 +128,7 @@ bool DualDeckVideo::execute(const VideoCommand& cmd)
             if (m_player[d].isValid())
                 m_player[d].stop();
         m_fade.stopAll();
+        m_lastAlpha[0] = m_lastAlpha[1] = -1;
         for (int d = 0; d < 2; ++d)
             applyAlpha(d);
         return true;

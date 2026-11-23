@@ -28,6 +28,7 @@ public:
     void setLoop(bool loop);
     void seek(double seconds);
     void resizeToHost();
+    void preWarm();
 
     int activeDeck() const { return m_fade.active(); }
     int deckAlpha(int deck) const { return m_fade.alpha(deck); }   // value the fade has computed
@@ -60,6 +61,7 @@ private:
     QElapsedTimer m_clock;
     double m_volume = 1.0;
     QString m_error;
+    int m_lastAlpha[2] = {-1, -1};
 };
 
 } // namespace Lux

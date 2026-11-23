@@ -81,6 +81,10 @@ void ProjectionService::showWindowOnce()
     if (!target)
         return;
     const bool wasShown = out->isShown();
+    if (wasShown && m_activeScreen == target->index + 1) {
+        push();
+        return;
+    }
     out->setMargins(m_settings.marginTop, m_settings.marginBottom, m_settings.marginLeft, m_settings.marginRight);
     if (!out->show(*target))
         return;
@@ -111,6 +115,13 @@ void ProjectionService::preWarm()
     IProjectionOutput* out = ensureOutput();
     if (out)
         out->preWarm();
+}
+
+void ProjectionService::preloadBackground(const QString& bg)
+{
+    IProjectionOutput* out = ensureOutput();
+    if (out)
+        out->preloadBackground(bg);
 }
 
 void ProjectionService::push()

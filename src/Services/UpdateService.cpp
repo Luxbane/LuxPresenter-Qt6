@@ -13,7 +13,7 @@
 #include <QWidget>
 
 #ifndef LUX_VERSION
-#define LUX_VERSION "1.0.1"
+#define LUX_VERSION "1.0.2"
 #endif
 
 namespace Lux {
