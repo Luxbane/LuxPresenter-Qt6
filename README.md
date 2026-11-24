@@ -3,13 +3,13 @@
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B20)
 [![Qt 6.12](https://img.shields.io/badge/Qt-6.12-green.svg)](https://www.qt.io/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D6.svg)](https://www.microsoft.com/windows)
-[![itch.io](https://img.shields.io/badge/itch.io-LuxPresenter-FA5C5C.svg)](https://luxbane.itch.io/luxpresenter)
+[![GitHub release](https://img.shields.io/github/v/release/Luxbane/LuxPresenter-Qt6?color=blue)](https://github.com/Luxbane/LuxPresenter-Qt6/releases)
 
 > *"We really got a free, high-performance church presenter app one day after GTA 6."* 🎮🕊️
 
 **LuxPresenter** is a high-performance, modern church presentation and worship projection software engineered in **C++20** and **Qt 6**, built and pair-programmed with **Claude Sonnet 5.5** and **Gemini 3.8 Flash**. Designed for churches, ministries, conferences, and live events, LuxPresenter delivers rock-solid stability, zero-latency switching, and hardware-accelerated dual-display output.
 
-* **itch.io Page:** [https://luxbane.itch.io/luxpresenter](https://luxbane.itch.io/luxpresenter)
+* **GitHub Repository:** [https://github.com/Luxbane/LuxPresenter-Qt6](https://github.com/Luxbane/LuxPresenter-Qt6)
 
 ---
 
@@ -52,7 +52,7 @@
 
 ## Download & Installation
 
-Visit the [Releases](https://github.com/Luxbane/LuxPresenter-Qt6/releases) page or our [itch.io](https://luxbane.itch.io/luxpresenter) page to download:
+Visit the [GitHub Releases](https://github.com/Luxbane/LuxPresenter-Qt6/releases) page to download:
 
 1. **LuxPresenter Setup (`LuxPresenter_Setup.exe`)**
    * Standard Windows installer.
@@ -130,4 +130,4 @@ LuxPresenter is created and maintained by **Luxbane**, co-developed with **Claud
 
 * **License:** Licensed under the [GNU General Public License v3.0](LICENSE) (GPL-3.0). Free and open-source forever.
 * **GitHub:** [@Luxbane](https://github.com/Luxbane)
-* **itch.io:** [https://luxbane.itch.io/luxpresenter](https://luxbane.itch.io/luxpresenter)
+* **Releases:** [https://github.com/Luxbane/LuxPresenter-Qt6/releases](https://github.com/Luxbane/LuxPresenter-Qt6/releases)

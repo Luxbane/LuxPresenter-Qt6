@@ -30,7 +30,8 @@ public:
 
     // Checks the latest GitHub release.
     // If interactive is true, shows feedback dialogs (update dialog, up-to-date message, or error).
-    void checkForUpdates(QWidget* parentWidget = nullptr, bool interactive = true);
+    // If forceShowUpdate is true, opens the update dialog even if the version is not newer (for testing).
+    void checkForUpdates(QWidget* parentWidget = nullptr, bool interactive = true, bool forceShowUpdate = false);
 
     // Semantic version comparison: returns true if remoteVer > currentVer
     static bool isVersionNewer(const QString& remoteVer, const QString& currentVer);
@@ -49,6 +50,7 @@ private:
     QNetworkAccessManager* m_nam = nullptr;
     QWidget* m_parentWidget = nullptr;
     bool m_interactive = true;
+    bool m_forceShowUpdate = false;
 };
 
 } // namespace Lux

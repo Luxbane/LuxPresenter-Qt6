@@ -76,10 +76,11 @@ bool UpdateService::isVersionNewer(const QString& remoteVer, const QString& curr
     return r.build > c.build;
 }
 
-void UpdateService::checkForUpdates(QWidget* parentWidget, bool interactive)
+void UpdateService::checkForUpdates(QWidget* parentWidget, bool interactive, bool forceShowUpdate)
 {
     m_parentWidget = parentWidget;
     m_interactive = interactive;
+    m_forceShowUpdate = forceShowUpdate;
 
     emit checkingStarted();
 
@@ -143,11 +144,14 @@ void UpdateService::onReplyFinished(QNetworkReply* reply)
     }
 
     const QString currentVer = QStringLiteral(LUX_VERSION);
-    const bool newer = isVersionNewer(remoteTag, currentVer);
+    const bool newer = isVersionNewer(remoteTag, currentVer) || m_forceShowUpdate;
 
     UpdateInfo info;
     info.currentVersion = currentVer;
     info.newVersion = remoteTag.isEmpty() ? currentVer : remoteTag;
+    if (m_forceShowUpdate && info.newVersion == currentVer) {
+        info.newVersion = QStringLiteral("%1 (Test Preview)").arg(currentVer);
+    }
     info.releaseTitle = releaseName;
     info.releaseNotes = releaseBody;
     info.releaseUrl = !htmlUrl.isEmpty() ? htmlUrl : QStringLiteral("https://github.com/Luxbane/LuxPresenter-Qt6/releases/latest");

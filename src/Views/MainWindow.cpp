@@ -118,6 +118,15 @@ MainWindow::MainWindow(DataService& data, QWidget* parent) : QMainWindow(parent)
     updateThemeUi();
     updateSongActions();
     connect(&ThemeService::instance(), &ThemeService::themeChanged, this, [this](bool) { updateThemeUi(); });
+
+    // Auto-check for updates silently on startup (non-interactive, shows dialog only if a newer version exists)
+    QTimer::singleShot(2500, this, [this] {
+        if (!m_suppressDialogs) {
+            if (!m_updateService)
+                m_updateService = new UpdateService(this);
+            m_updateService->checkForUpdates(this, /*interactive=*/false, /*forceShowUpdate=*/false);
+        }
+    });
 }
 
 SongsTab* MainWindow::songsTab() const { return m_library->songsTab(); }
@@ -1152,8 +1161,9 @@ void MainWindow::checkForUpdates()
     if (!m_updateService)
         m_updateService = new UpdateService(this);
 
-    setStatusText(QStringLiteral("Checking for updates..."));
-    m_updateService->checkForUpdates(this, /*interactive=*/true);
+    const bool shiftHeld = (QGuiApplication::keyboardModifiers() & Qt::ShiftModifier) != 0;
+    setStatusText(shiftHeld ? QStringLiteral("Checking for updates (test mode)...") : QStringLiteral("Checking for updates..."));
+    m_updateService->checkForUpdates(this, /*interactive=*/true, /*forceShowUpdate=*/shiftHeld);
 }
 
 void MainWindow::toggleStageWindow()

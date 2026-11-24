@@ -63,7 +63,7 @@ AboutWindow::AboutWindow(QWidget* parent) : QDialog(parent)
     info->addWidget(version);
     info->addWidget(created);
     info->addSpacing(4);
-    info->addWidget(linkRow(QStringLiteral("\U0001F310 itch.io:"), QStringLiteral("https://luxbane.itch.io/luxpresenter"), this));
+    info->addWidget(linkRow(QStringLiteral("\U0001F4BB GitHub:"), QStringLiteral("https://github.com/Luxbane/LuxPresenter-Qt6"), this));
     info->addWidget(linkRow(QStringLiteral("\U0001F4F7 Instagram:"), QStringLiteral("https://www.instagram.com/luxbane._"), this));
     info->addWidget(linkRow(QStringLiteral("\u2615 Ko-fi:"), QString::fromLatin1(kKofiUrl), this));
     info->addSpacing(10);
